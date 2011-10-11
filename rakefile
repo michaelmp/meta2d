@@ -1,0 +1,65 @@
+=begin
+  A simple build script for meta2d.js.
+  + jsmin
+  + gzip
+
+  How to use this build script:
+    run `rake'
+=end
+
+directory "build"
+directory "jsmin/bin"
+
+# order matters
+sourcefiles = [ 
+  "src/meta2d.js",
+  "src/modifier.js",
+  "src/animation.js",
+  "src/collision.js",
+  "src/image.js",
+  "src/layer.js",
+  "src/lru.js",
+  "src/process.js",
+  "src/projection.js",
+  "src/rtree.js",
+  "src/segment.js",
+  "src/selector.js",
+  "src/context.js",
+  "src/tween.js"
+  ]
+
+desc "Combine all javascript source files into a single file."
+task :merge => "build" do
+  puts "Merging src/*.js into build/meta2d.js"
+  sh "cat " + sourcefiles.join(" ") + " > 'build/meta2d.js'"
+  puts "Done."
+  puts ""
+end
+
+desc "Build the jsmin binary."
+file 'jsmin/bin/jsmin' => ['jsmin/src/jsmin.c', 'jsmin/bin'] do
+  puts "Building jsmin from source..."
+  sh "gcc jsmin/src/jsmin.c -o jsmin/bin/jsmin"
+  puts "Done."
+  puts ""
+end
+
+desc "Minify the javascript source."
+task :minify => ['jsmin/bin/jsmin'] do
+  puts "Minifying build/meta2d.js as build/meta2d.min.js"
+  sh "'jsmin/bin/jsmin' < 'build/meta2d.js' > 'build/meta2d.min.js'"
+  puts "Done."
+  puts ""
+end
+
+desc "Export a gzip-compressed copy of all builds."
+task :compress do
+  puts "Not gzipping this time"
+  puts ""
+end
+
+desc "Merge, minify, and compress source code."
+task :default => [:merge, :minify, :compress] do
+  puts "Done."
+  puts ""
+end
