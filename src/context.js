@@ -355,8 +355,8 @@
   /**
    * Draws to active layer the list of draw commands.
    */
-  Context.prototype.draw = function(list) {
-    this.getLayerByName(this.getActiveLayerName()).draw(list, this);
+  Context.prototype.draw = function(params) {
+    this.getLayerByName(this.getActiveLayerName()).draw(params, this);
     return this;
   };
 
@@ -805,9 +805,10 @@
         // Fetch display list, allow direct rendering & transformations.
         this.push();
         var drawlist = obj.draw.call(obj, this);
-        if (drawlist) {
-          // Draw everything in display list.
-          ctx.draw(drawlist);
+        if(drawlist){
+          for (var l = 0; l < drawlist.length; l++) {
+            ctx.draw(drawlist[l]);
+          }
         }
         this.pop();
 

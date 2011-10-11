@@ -23,11 +23,11 @@
   // Safely create or reuse a namespace.
   var redeclare = function(o, init) {return o || init || {}};
 
-  // Local namespace for this library.
+  // Create or reuse namespace, along with a short-hand name.
   var meta = root.meta2d = redeclare(root.meta2d);
 
   // The version of this code.
-  meta.VERSION = '0.1';
+  meta.VERSION = '0.0';
 
   // Basic utilities.
   meta.undef = function(o) {return typeof o === 'undefined'};

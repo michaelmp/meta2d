@@ -148,16 +148,7 @@
   /**
    * Draws a list of draw commands.
    */
-  Layer.prototype.draw = function(list, surface) {
-    var key = meta.serialize(list);
-    var image = this.lru.get(key);
-    if (image) {
-      // use cache hit
-      return;
-    }
-
-    // build new 
-
+  Layer.prototype.draw = function(params, surface) {
     if (!surface || !params) throw 'Invalid parameters.';
     var image = surface.getImageByName(params.image);
     if (!image) return;
