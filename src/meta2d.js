@@ -8,7 +8,7 @@
  * specified by W3C:
  * @see http://dev.w3.org/html5/2dcontext/
  *
- * For more information, examples, and documentation:
+ * For more information, up-to-date source, examples, and documentation:
  * @see https://gitorious.org/meta2d/
  *                                                                            80
  *----------------------------------------------------------------------------*/
@@ -29,6 +29,34 @@
   // The version of this code.
   meta.VERSION = '0.0';
 
+  // Exceptions Used
+  meta.exception = redeclare(meta.exception);
+
+  var printX = function() {
+    return this.name + ': ' + this.message;
+  };
+
+  var paramX = function(name, value) {
+    this.message = name + ':' + value;
+    this.name = 'InvalidParameterException';
+  };
+  paramX.prototype.toString = printX;
+  meta.exception.InvalidParameterException = paramX;
+
+  var unimplementedX = function(name) {
+    this.message = name;
+    this.name = 'UnimplementedMethodException';
+  };
+  unimplementedX.prototype.toString = printX;
+  meta.exception.UnimplementedMethodException = unimplementedX;
+
+  var dependencyX = function(name) {
+    this.message = name;
+    this.name = 'UnsatisfiedDependencyException';
+  };
+  dependencyX.prototype.toString = printX;
+  meta.exception.UnsatisfiedDependencyException = dependencyX;
+
   // Basic utilities.
   meta.undef = function(o) {return typeof o === 'undefined'};
   meta.def = function(o) {return !meta.undef(o)};
@@ -36,12 +64,17 @@
   meta.isObject = function(o) {return typeof obj === 'object'};
   meta.isNumber = function(o) {return typeof obj === 'number'};
   meta.isFunction = function(o) {return typeof obj === 'function'};
-  meta.inherits = function(o, parent) {throw 'Unimplemented.'};
+  meta.inherits = function(o, parent) {
+    throw new meta.exception.
+      UnimplementedMethodException('inherits');
+  };
   meta.redeclare = redeclare;
 
   // External functionality.
   var V = Vector.create || $V;
-  if (!V) throw 'Requires vector math: import sylvester.js';
+  if (!V)
+    throw new meta.exception.
+      UnsatisfiedDependencyException('sylvester');
   meta.V = V;
 
   // Cache bitcodes.

@@ -53,7 +53,7 @@
    */
   RTree.prototype.debug = function(w, h, layer, scale) {
     var top = !layer;
-    layer = layer || new meta.Layer(void 0, {'w': w, 'h': h});
+    layer = layer || new meta.Layer(void 0, {w: w, h: h});
     if (scale) layer.context.scale(scale, scale);
     if (this.children) {
       this.children.each(function(child) {

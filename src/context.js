@@ -4,7 +4,7 @@
   'use strict';
   var root = this;
   var meta = root.meta2d;
-  if (!meta) throw 'could not find main namespace.';
+  if (!meta) throw 'Could not find main namespace.';
 
   var OBJECT_COUNT = 0;
 
@@ -19,140 +19,397 @@
     return newids;
   };
 
+  // @thisArg [meta::Context]
+  var backoffToSelectedLayer = function(property) {
+    return (function() {
+        var layer = this.getSelectedLayer();
+        if (meta.undef(layer)) return this;
+        var context = layer.getNativeContext();
+        if (meta.undef(context)) return this;
+        if (!(property in context))
+          throw new meta.exception.
+            NonconformantPropertyException(property);
+        context.layer[property].apply(layer, arguments);
+        return this;
+        }).bind(this);
+  };
+
   /**
    * @class Context
+   * This class is kind of important...
+   *
+   * @constructor
    */
   var Context = function(parent, params) {
-    if (!parent) throw 'invalid arguments.'
+    if (!parent) throw new meta.InvalidParameterException('parent', parent);
     if (meta.isString(parent)) parent = document.getElementById(parent);
     var ctx_ = this;
-    var processes_ = new Hash();
-    var tagmap_ = new Hash();
-    var layers_ = new Hash();    // string --> layer
-    var images_ = new Hash();    // string --> image
-    var anims_ = new Hash();     // string --> animation
-    var audio_ = new Hash();     // string --> audio
-    var imagesLoading_ = 0;
-    var audioLoading_ = 0;
-    var activeLayer_ = '';      // the layer on which graphics are presently drawn
-    var defaultWidth_ = 300;    // pixel width
-    var defaultHeight_ = 200;   // pixel height
-    var mouseFocus_ = null;     // object the mouse is presently focused on
-    var camera_ = null;
-    var cameraProjection_ = null;
-    var mouse_ = null;
+    var data_ = {
+      animations: {};
+      images: {};
+      layers: {};
+      entities: {};
+    };
+    var selectedLayers_ = [];
+    var focusedEntities_ = [];
+    var cursorPosition_ = {};
+    var cameraPosition_ = {};
+    var cameraProjection_ = {};
 
-    this.getMouse = function() {
-      return mouse_;
+    /**
+     * @privileged
+     * @method addAnimation
+     * @param [String] name
+     * @param [meta::Animation] animation
+     * @return [meta::Context]
+     */
+    this.addAnimation = function(name, animation) {
+      if (meta.undef(name))
+        throw new meta.exception.
+          InvalidParameterException('name', name);
+      if (meta.undef(animation))
+        throw new meta.exception.
+          InvalidParameterException('animation', animation);
+      data_.animations[name] = animation;
+      return ctx_;
     };
 
-    this.setMouse = function(pos) {
-      mouse_ = pos;
-      return this;
-    };
-
-    this.getMouseFocus = function() {
-      return mouseFocus_;
-    };
-
-    this.setMouseFocus = function(o) {
-      mouseFocus_ = o;
-      return this;
-    };
-
-    this.getCamera = function() {
-      return camera_;
-    };
-
-    this.setCamera = function(pos) {
-      camera_ = pos;
-      return this;
-    };
-
-    this.getCameraProjection = function() {
-      return cameraProjection_;
-    };
-
-    this.setCameraProjection = function(projection) {
-      cameraProjection_ = projection;
-      return this;
-    };
-
+    /**
+     * @privileged
+     * @method getAnimationByName
+     * @param [String name]
+     * @return [meta::Animation]
+     */
     this.getAnimationByName = function(name) {
-      return anims_.get(name);
+      if (meta.undef(name))
+        throw new meta.exception.
+          InvalidParameterException('name', name);
+      return data_.animations[name];
     };
 
-    this.setAnimation = function(name, anim) {
-      anims_.set(name, anim);
-      return this;
+    /**
+     * @privileged
+     * @method createArray
+     * @param [String|Array<String>] tags
+     * @param [meta:Segment]
+     */
+    this.createArray = function(tags) {
+    };
+ 
+    /**
+     * @privileged
+     * @method getCameraPosition
+     * @return [meta::math::Vector]
+     */
+    this.getCameraPosition = function() {
+      return cameraPosition_[0];
     };
 
+    /**
+     * @privileged
+     * @method setCameraPosition
+     * @param [meta::math::Vector] vector
+     * @return [meta::Context]
+     */
+    this.setCameraPosition = function(vector) {
+      if (meta.undef(vector))
+        throw new meta.exception.
+          InvalidParameterException('vector', vector);
+      cameraPosition_[0] = vector;
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method getCursorPosition
+     * @return [meta::math::Vector]
+     */
+    this.getCursorPosition = function() {
+      return cursorPosition_[0];
+    };
+
+    /**
+     * @privileged
+     * @method setCursorPosition
+     * @param [meta::math::Vector] vector
+     * @return [meta::Context]
+     */
+    this.setCursorPosition = function(vector) {
+      cursorPosition_[0] = vector;
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method addEntity
+     * @param [String|Array<String>] tags
+     * @param [meta::Entity] entity
+     * @return [meta::Context]
+     */
+    this.addEntity = function(tags, entity) {
+      throw new meta.exception.UnimplementedMethodException('addEntity');
+    };
+
+    /**
+     * @privileged
+     * @method addEntitites
+     * @param [String|Array<String>] tags
+     * @param [Array<meta::Entity>] entities
+     * @return [meta::Context]
+     */
+    this.addEntities = function(tags, entities) {
+      throw new meta.exception.UnimplementedMethodException('addEntities');
+    };
+
+    /**
+     * @privileged
+     * @method createEntity
+     * @param [String|Array<String>] tags
+     * @param [Object] params
+     * @return [meta::Context]
+     */
+    this.createEntity = function(tags, params) {
+      this.addEntity(addEntity(tags, new meta::Entity(params)));
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method setEntityProjection
+     * @param [meta::Projection] projection
+     * @return [meta::Context]
+     */
+    this.setEntityProjection = function(projection) {
+      throw new meta.exception.UnimplementedMethodException('setEntityProjection');
+    };
+
+    /**
+     * @privileged
+     * @method setEntityFocusMask
+     * @param [meta::Collision] mask
+     * @return [meta::Context]
+     */
+    this.setEntityFocusMask = function(mask) {
+      throw new meta.exception.UnimplementedMethodException('setEntityFocusMask');
+    };
+
+    /**
+     * @privileged
+     * @method selectEntities
+     * @param [String|Array<String>] tags
+     * @return [meta::Context]
+     */
+    this.selectEntities = function(tags) {
+      throw new meta.exception.UnimplementedMethodException('selectEntities');
+    };
+
+    /**
+     * @privileged
+     * @method getEntitiesByTags
+     * @param [String|Array<String>] tags
+     * @return [Array<meta::Entity>]
+     */
+    this.getEntitiesByTags = function(tags) {
+      throw new meta.UnimplementedMethodException('getEntitiesByTags');
+    };
+
+    /**
+     * @privileged
+     * @method getEntityById
+     * @param [Number] id
+     * @return [meta::Entity]
+     */
+    this.getEntityById = function(id) {
+      throw new meta.UnimplementedMethodException('getEntityById');
+    };
+
+    /**
+     * @privileged
+     * @method removeSelectedEntities
+     * @return [meta::Context]
+     */
+    this.removeSelectedEntities = function() {
+      throw new meta.UnimplementedMethodException('removeSelectedEntities');
+    };
+
+    /**
+     * @privileged
+     * @method getEntitySelectionTags
+     * @return String
+     */
+    this.getEntitySelectionTags = function() {
+      throw new meta.UnimplementedMethodException('getEntitySelectionTags');
+    };
+
+    /**
+     * @privileged
+     * @method addEntityEventListener
+     * @param [String] type
+     * @param [Function(meta::Event)] callback)
+     * @return [meta::Context]
+     */
+    this.addEntityEventListener = function(type, callback) {
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method dispatchEvent
+     * @param [meta::Event] event
+     * @return [meta::Context]
+     */
+    this.dispatchEvent = function(event) {
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method getFocusedEntities
+     * @return [Array<meta::Entity>]
+     */
+    this.getFocusedEntities = function() {
+      return focus_;
+    };
+
+    /**
+     * @privileged
+     * @method setFocusedEntities
+     * @param [Array<meta::Entity>] entities
+     * @return [meta::Context]
+     */
+    this.setFocusedEntitites= function(entities) {
+      if (!entities)
+        throw new meta.InvalidParameterException('entities', entities);
+      focus_ = entities;
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method addImage
+     * @param [String] name
+     * @param [meta::Image] image
+     * @return [meta::Context]
+     */
+    this.addImage = function(name, image) {
+      if (meta.undef(name))
+        throw new meta.exception.
+          InvalidParameterException('name', name);
+      if (meta.undef(animation))
+        throw new meta.exception.
+          InvalidParameterException('image', image);
+      data_.images[name] = image;
+      return ctx_;
+    };
+
+    /**
+     * @privileged
+     * @method getImageByName
+     * @param [String name]
+     * @return [meta::Image]
+     */
     this.getImageByName = function(name) {
-      return images_.get(name);
+      if (meta.undef(name))
+        throw new meta.exception.
+          InvalidParameterException('name', name);
+      return data_.images[name];
     };
 
-    this.setImage = function(name, image) {
-      images_.set(name, image);
-      return this;
+    /**
+     * @privileged
+     * @method addLayer
+     * @param [String] name
+     * @param [meta::Layer] layer
+     * @return [meta::Context]
+     */
+    this.addLayer = function() {
+      throw new meta.UnimplementedMethodException('addLayer');
     };
 
-    this.getProcessByName = function(name) {
-      return processes_.get(name);
+    /**
+     * @privileged
+     * @method createLayer
+     * @param [String] name
+     * @return [meta::Context]
+     */
+    this.createLayer = function(name) {
+      addLayer(name, new meta.Layer());
+      return ctx_;
     };
 
-    this.setProcess = function(name, process) {
-      processes_.set(name, process);
-      return this;
+    /**
+     * @privileged
+     * @method selectLayer
+     * @param [String] name
+     * @return [meta::Context]
+     */
+    this.selectLayer = function(name) {
+      if (meta.undef(name))
+        throw new meta.InvalidParameterException('name', name);
+      selectedLayers_ = [name];
+      return ctx_;
     };
 
-    this.imagesLoading = function() {
-      return imagesLoading_;
-    };
-
-    this.audioLoading = function() {
-      return audioLoading_;
-    };
-
-    this.loading = function() {
-      return this.imagesLoading() + this.audioLoading();
-    };
-
+    /**
+     * @privileged
+     * @method getLayerByName
+     * @param [String name]
+     * @return [meta::Layer]
+     */
     this.getLayerByName = function(name) {
-      if (!name) return null;
-      return layers_.get(name);
+      throw new meta.UnimplementedMethodException('getLayerByName');
     };
 
-    this.setLayer = function(name, layer) {
-      if (!name) return null;
-      return layers_.set(name, layer);
+    /**
+     * @privileged
+     * @method renameLayer
+     * @param [String] name
+     * @param [String] newName
+     * @return [meta::Context]
+     */
+    this.renameLayer = function(name, newName) {
+      throw new meta.UnimplementedMethodException('renameLayers');
     };
 
-    this.getLayerNames = function() {
-      return layers_.keys().without('');
+    /**
+     * @privileged
+     * @method removeLayers
+     * @param [String|Array<String>] names
+     * @return [meta::Context]
+     */
+    this.removeLayers = function(names) {
+      throw new meta.UnimplementedMethodException('removeLayers');
     };
 
-    this.getLayers = function() {
-      return layers_.values();
+    /**
+     * @privileged
+     * @method removeSelectedLayers
+     * @return [meta::Context]
+     */
+    this.removeSelectedLayers = function() {
+      throw new meta.UnimplementedMethodException('removeSelectedLayers');
     };
 
-    this.getActiveLayer = function() {
-      return layers_.get(activeLayer_);
-    };
+    /**
+     * @privileged
+     * @method getLayerSelectionName
+     * @return String
+     */
+    this.getLayerSelectionName = function() {
+      throw new meta.UnimplementedMethodException('getLayerSelectionName');
+    }; 
 
-    this.getActiveLayerName = function() {
-      return activeLayer_;
-    };
 
-    this.setActiveLayer = function(name) {
-      if (!this.getLayerByName(name)) return null;
-      activeLayer_ = name;
-      return name;
-    };
 
-    this.getObjectsByTag = function(tag) {
-      return tagmap_.get(tag);
-    };
 
+
+
+
+
+
+
+
+    /**
     this.getObjectsByTags = function(tags) {
       if (meta.undef(tags)) throw 'Invalid parameters.';
       if (meta.isString(tags)) tags = tags.split(' ');
@@ -176,11 +433,6 @@
       return this;
     };
 
-    /**
-     * return the names of all layers, sorted by z-order.
-     *
-     * @return [layer, ...]
-     */
     this.getSortedLayers = function() {
       var ctx = this;
       var ls = this.getLayerNames().sortBy(function(s){
@@ -189,13 +441,7 @@
       return ls;
     };
 
-    /**
-     * fetches the highest z-order mouse-colliding object at a test point.
-     *
-     * @param params.x
-     *            .y
-     * @return object
-     */
+
     this.getHighestObject = function(params) {
       var ls = this.getSortedLayers().reverse();
       for (var i = 0; i < ls.length; ++i) {
@@ -235,12 +481,7 @@
       return null;
     };
 
-    /**
-     * where is the mouse in coordinates relative to the main canvas element?
-     *
-     * @param event -- html event
-     * @return {dx,dy}
-     */
+
     this.getMouseScreenPosition = function(event) {
       return {
         dx: event.pointerX() - this.parent.getLayout().get('left'),
@@ -248,13 +489,6 @@
       };
     };
 
-    /**
-     * handle canvas-level click event, propagating canvas-level events into object
-     * layers.
-     *
-     * @param event -- html event
-     * @return void
-     */
     this.click = function(event) {
       var top = this.getHighestObject(this.getMouseScreenPosition(event));
       if (!top) return;
@@ -263,13 +497,6 @@
       return this;
     };
 
-    /**
-     * handle canvas-level mouse motion, propagating canvas-level events into object
-     * layers.
-     *
-     * @param event -- html event
-     * @return void
-     */
     this.mousemove = function(event) {
       var coords = this.getMouseScreenPosition(event);
       var top = this.getHighestObject(coords);
@@ -301,56 +528,100 @@
 
       return this;
     };
+    */
 
     this.parent = document.createElement('div');
-    this.params = params || {w: defaultWidth_, h: defaultHeight_};
+    this.params = params || {w: 100, h: 100};
     this.resize(params);
     parent.appendChild(this.parent);
     Event.observe(this.parent, 'click', this.click.bind(this));
     Event.observe(this.parent, 'mousemove', this.mousemove.bind(this));
 
-    this.setLayer('', new meta.Layer(this.parent, this.params));
+    //this.setLayer('', new meta.Layer(this.parent, this.params));
 
+
+    var backoff = backoffToSelectedLayer;
+    //
+    // CanvasRenderingContext2D methods, multiplexed to selected layer.
+    // All are privileged due to strict mode context rules. Defining inside of
+    // [[proto]] would require an unexplicitly-bound closure, as the thisArg
+    // is not known until instantiation, so 'backoffToSelectedLayer' must
+    // return a closure with the instance object explicitly-bound.
+    //
+    this.save = backoff.call(this,'save');
+    this.restore = backoff.call(this,'restore');
+    this.scale = backoff.call(this, 'scale');
+    this.rotate = backoff.call(this, 'rotate');
+    this.translate = backoff.call(this, 'translate');
+    this.transform = backoff.call(this, 'transform');
+    this.setTransform = backoff.call(this, 'setTransform');
+    //
+    this.createLinearGradient = backoff.call('createLinearGradient');
+    this.createRadialGradient = backoff.call(this, 'createRadialGradient');
+    this.createPattern = backoff.call(this, 'createPattern');
+    //
+    this.clearRect = backoff.call(this, 'clearRect');
+    this.fillRect = backoff.call(this, 'fillRect');
+    this.strokeRect = backoff.call(this, 'strokeRect');
+    //
+    this.beginPath = backoff.call(this, 'beginPath');
+    this.closePath = backoff.call(this, 'closePath');
+    //
+    this.moveTo = backoff.call(this, 'moveTo');
+    this.lineTo = backoff.call(this, 'lineTo');
+    this.quadraticCurveTo = backoff.call(this, 'quadraticCurveTo');
+    this.arcTo = backoff.call(this, 'arcTo');
+    this.rect = backoff.call(this, 'rect');
+    this.arc = backoff.call(this, 'arc');
+    this.fill = backoff.call(this, 'fill');
+    this.stroke = backoff.call(this, 'stroke');
+    this.clip = backoff.call(this, 'clip');
+    //
+    this.isPointInPath = backoff.call(this, 'isPointInPath');
+    //
+    this.drawFocusRing = backoff.call(this, 'drawFocusRing');
+    this.caretBlinkRate = backoff.call(this, 'caretBlinkRate');
+    this.setCaretSelectionRect = backoff.call(this, 'setCaretSelectionRect');
+    //
+    this.font = backoff.call(this, 'font');
+    this.textAlign = backoff.call(this, 'textAlign');
+    this.textBaseline = backoff.call(this, 'textBaseline');
+    //
+    this.fillText = backoff.call(this, 'fillText');
+    this.strokeText = backoff.call(this, 'strokeText');
+    this.measureText = backoff.call(this, 'measureText');
+    //
+    this.drawImage = backoff.call(this, 'drawImage');
+    this.createImageData = backoff.call(this, 'createImageData');
+    this.getImageData = backoff.call(this, 'getImageData');
+    this.putImageData = backoff.call(this, 'putImageData');
+
+  };
+
+  // Access native Context2D members per selected layer.
+  // NOTE: Access could be implemented using getters/setters on properties,
+  // but getters/setters & read-only property values are poorly-supported
+  // in IE & Opera as of this authoring.
+  Context.prototype.setContextProperty = function(name, value) {
+    var layer = this.getSelectedLayer();
+    if (meta.undef(layer)) return this;
+    layer.setContextProperty(name, value);
     return this;
   };
-
-  /**
-   */
-  Context.prototype.screenPositionToLayerPosition = function() {
+  Context.prototype.getContextProperty = function(name, value) {
+    var layer = this.getSelectedLayer();
+    if (meta.undef(layer)) return void 0;
+    return layer.getContextProperty(name, value);
   };
 
-  /**
-   */
-  Context.prototype.layerPositionToScreenPosition = function() {
-  };
 
-  /**
-  */
-  Context.prototype.select = function(tags) {
-    return new meta.Selector(this.getObjectsByTags(tags));
-  };
 
-  /**
-   * erase graphics on accumulation layer.
-   *
-   * @return Context
-   */
-  Context.prototype.clearAccumulationLayer = function() {
-    this.getLayerByName('').getPrimaryContext(this).clearRect(
-        0, 0, this.params.w, this.params.h);
-    return this;
-  };
 
-  /**
-   * @deprecated
-   * erase graphics on main canvas.
-   *
-   * @return Context
-   */
-  Context.prototype.clearScreen = function() {
-    this.context.clearRect(0, 0, this.params.w, this.params.h);
-    return this;
-  };
+
+
+
+
+
 
   /**
    * Draws to active layer the list of draw commands.
@@ -594,69 +865,6 @@
   };
 
   /**
-   * set the active font for text drawing.
-   *
-   * @param {string} font -- css font
-   * @return Context
-   */
-  Context.prototype.font = function(font) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .font = font;
-    return this;
-  };
-
-  /**
-   * set css-style stroke type.
-   *
-   * @param {string} color -- e.g.'rgba(255,255,255,0.5)'
-   * @return Context
-   */
-  Context.prototype.style = function(color) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .fillStyle = color;
-    return this;
-  };
-
-  /**
-   * fill the active layer with the current style.
-   *
-   * @return Context
-   */
-  Context.prototype.fill = function() {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .fillRect(
-        0,
-        0,
-        this.params.w,
-        this.params.h
-        );
-    return this;
-  };
-
-  /**
-   * print the message at (x,y) specified in params with the current style.
-   *
-   * @param string msg -- what to print
-   * @param params.{x,y} -- where to print the text on the canvas
-   * @return Context
-   */
-  Context.prototype.text = function(msg, params) {
-    if (!params || !params.x || !params.y)
-      throw 'Invalid parameters.';
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .fillText(
-        msg,
-        params.x,
-        params.y
-        );
-    return this;
-  };
-
-  /**
    * erase graphic content on all non-prebuffer layers.
    *
    * @return Context
@@ -669,67 +877,6 @@
         ctx.layer(name).clear(ctx);
         });
     return this.layer(active);
-  };
-
-  /**
-  */
-  Context.prototype.push = function() {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .save();
-  };
-
-  /**
-  */
-  Context.prototype.pop = function() {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .restore();
-  };
-
-  /**
-  */
-  Context.prototype.scale = function(x, y) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .scale(x, y);
-  };
-
-  /**
-  */
-  Context.prototype.rotate = function(radians) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .rotate(radians);
-  };
-
-  /**
-  */
-  Context.prototype.translate = function(x, y) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .translate(x, y);
-  };
-
-  /**
-  */
-  Context.prototype.transform = function(a, b, c, d, e, f) {
-    this.getLayerByName(this.getActiveLayerName())
-      .getPrimaryContext(this)
-      .transform(a, b, c, d, e, f);
-  };
-
-  /**
-   */
-  Context.prototype.compose = function(params) {
-    if (meta.def(params.alpha))
-      this.getLayerByName(this.getActiveLayerName())
-        .getPrimaryContext(this)
-        .globalAlpha = params.alpha;
-    if (meta.def(params.mode))
-      this.getLayerByName(this.getActiveLayerName())
-        .getPrimaryContext(this)
-        .globalCompositeOperation = params.mode;
   };
 
   /**

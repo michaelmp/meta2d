@@ -12,51 +12,55 @@
    * Load a same-origin image and process the pixels as RGBA data. The image
    * must be from the same origin, as the pixel data is read from getImageData.
    *
-   * @param params
+   * @param params {src, w, h}
    */
   var Image = function(params){
     if (!params) throw 'Invalid Parameters';
     this.src = params.src;
-    this.data = [];
+    this.pixels = [];
     this.w = params.w;
     this.h = params.h;
-    this.img = document.createElement('img');
+    this.image = document.createElement('img');
 
-    var canvas = document.createElement('canvas');
-    canvas.width = this.w;
-    canvas.height = this.h;
-    var context = canvas.getContext('2d');
-    var that = this;
+    var canvas_ = document.createElement('canvas');
+    canvas_.width = this.w;
+    canvas_.height = this.h;
+    var context_ = canvas_.getContext('2d');
+    var img_ = this;
 
     /**
      * @return {r,g,b,a}
      */
-    this.getPixel = function(x, y){
+    this.getPixel = function(x, y) {
       var idx = 4 * ((y * this.w) + x);
       return {
-        r: this.data[idx],
-        g: this.data[idx+1],
-        b: this.data[idx+2],
-        a: this.data[idx+3]
+        r: this.pixels[idx],
+        g: this.pixels[idx+1],
+        b: this.pixels[idx+2],
+        a: this.pixels[idx+3]
       };
     };
 
-    this.process = function(){
-      context.drawImage(that.img, 0, 0);
-      var imgdata = context.getImageData(0, 0, that.w, that.h);
-      for (var i = 0; i < imgdata.data.length; i += 1) {
-        that.data[i] = imgdata.data[i];
+    // Extract the pixel data as an array.
+    var process_ = function() {
+      context_.drawImage(img_.image, 0, 0);
+      var imgdata = context_.getImageData(0, 0, img_.w, img_.h);
+      var i = imgdata.data.length;
+
+      while (i--) {
+        img_.pixels[i] = imgdata.data[i];
       }
-      if (that.onload !== undefined) {
-        that.onload();
+
+      if ('onload' in img_) {
+        img_.onload.call(img_);
       }
-      context = null;
-      canvas = null;
-      meta.images_loading -= 1;
+
+      // Free up leftover memory for garbage collection.
+      context_ = null;
+      canvas_ = null;
     };
 
-    this.img.onload = this.process;
-    meta.images_loading += 1;
+    this.img.onload = process_;
     this.img.src = this.src;
   };
 

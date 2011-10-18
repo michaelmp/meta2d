@@ -10,6 +10,12 @@
     return (0.5 + val) << 0;
   };
 
+  // @static
+  // Context properties that should not be mutable by layer.
+  var READ_ONLY = {
+    canvas: void 0;
+  };
+
   /**
    * @class Layer
    * 
@@ -18,43 +24,146 @@
    *
    * @param parent -- HTML element
    * @param params -- parameters
+   *
+   * @constructor
    */
   var Layer = function(parent, params) {
-    this.parent = parent;
-    this.cache = meta.cache.IGNORE;
-    this.corrupt = false;
-    this.zorder = 0;
-    this.parallax = null;
-    this.objects = new Array();
-    this.rtree= new meta.RTree(10);
-    this.treehash = new Hash();
-    this.canvas = document.createElement('canvas');
-    this.buffer = document.createElement('canvas');
-    this.canvas.width = this.buffer.width = this.w = params.w;
-    this.canvas.height = this.buffer.height = this.h = params.h;
-    this.canvas.setAttribute('style', DEFAULT_STYLE);
-    this.context = this.canvas.getContext('2d');
-    this.buffercontext = this.buffer.getContext('2d');
-    if (this.parent) {
-      this.parent.appendChild(this.canvas);
-    }
+    var cache_ = meta.cache.IGNORE;
+    var corrupt_ = false;
+    var objects_ = [];
+    var parallax_ = null;
+    var parent_ = parent;
+    var rtree_ = new meta.RTree((params && params.branch) || 10);
+    var treehash_ = {};
+    var zorder_ = 0;
+
+    this.getCacheCode = function() {
+      return cache_;
+    };
+    this.setCacheCode = function(value) {
+      if (meta.undef(value))
+        throw new meta.exception.
+          InvalidParameterException('value', value);
+      cache_ = value;
+      return this;
+    };
+
+    this.isCorrupt = function() {
+      return corrupt_;
+    };
+
+    // put objects
+    // retrieve objects
+
+    this.getParallax = function() {
+      return parallax_;
+    };
+    this.setParallax = function(value) {
+      if (meta.undef(value))
+        throw new meta.exception.
+          InvalidParameterException('value', value);
+      parallax_ = value;
+      return this;
+    };
+
+    this.getParent() = function() {
+      return parent_;
+    };
+
+    this.getZ = function() {
+      return zorder_;
+    };
+    this.setZ = function(value) {
+      if (meta.undef(value))
+        throw new meta.exception.
+          InvalidParameterException('value', value);
+      zorder_ = value;
+      this.getNativeCanvas().setAttribute('style',
+        DEFAULT_STYLE + ' z-index: ' + value + ';');
+      return this;
+    };
+
+    var canvas_ = document.createElement('canvas');
+    var buffer_ = document.createElement('canvas');
+    canvas_.width = buffer_.width = this.w = params.w;
+    canvas_.height = buffer_.height = this.h = params.h;
+    canvas_.setAttribute('style', DEFAULT_STYLE);
+    var context_ = canvas_.getContext('2d');
+    var buffercontext_ = buffer_.getContext('2d');
+
+    this.getNativeContext = function() {
+      return context_;
+    };
+
+    /**
+     * Default values as specified in Conformance Requirements.
+     * @see http://dev.w3.org/html5/2dcontext/Overview.html
+     *   #conformance-requirements
+     * NOTE: getters/setters & Object.setProperty:'writable' could make this
+     * implementation seamless with the w3's interface, but would alienate
+     * IE/Opera users.
+     */
+    var properties_ = {
+      canvas: canvas_,
+      globalAlpha: context_.globalAlpha,
+      globalCompositeOperation: context_.globalCompositeOperation,
+      strokeStyle: context_.strokeStyle,
+      fillStyle: context_.fillStyle,
+      lineWidth: context_.lineWidth,
+      lineCap: context_.lineCap,
+      lineJoin: context_.lineJoin,
+      miterLimit: context_.miterLimit,
+      shadowOffsetX: context_.shadowOffsetX,
+      shadowOffsetY: context_.shadowOffsetY,
+      shadowBlur: context_.shadowBlur,
+      shadowColor: context_.shadowColor
+    };
+
+    /**
+     * Always defer to the context's state, since it may change under us,
+     * but keep a backup state in case we need to destroy and recreate the
+     * canvas (we can resize the canvas without affecting state, but the need
+     * to recreate the canvas may arise in the future). Similarly, we may not
+     * want to always accept external modifications to the context, or we may
+     * wish to contrast the external state from the internal.
+     * NOTE: The 'canvas' property is read only.
+     */
+    this.getContextProperty = function(name, value) {
+      if (name in properties_)
+        return properties_[name] = context_[name];
+      return void 0;
+    };
+    this.setContextProperty = function(name, value) {
+      if (name in READ_ONLY)
+        throw new meta.exception.
+          ReadOnlyPropertyException(name);
+      if (name in properties_) {
+        context_[name] = properties_[name] = value;
+        return this;
+      }
+      throw new meta.exception.
+        NonconformantPropertyException(name);
+    };
+
+
+    // Insert this layer's graphical representation into the DOM.
+    if (parent_) {
+      parent_.appendChild(canvas_);
+    };
   };
 
   Layer.prototype.dirty = function() {
-    if (!(this.cache & meta.cache.USE)) return;
-      this.cache |= meta.cache.DIRTY;
+    var code = this.getCacheCode();
+    if (!(code & meta.cache.USE)) return this;
+    this.setCacheCode(code | meta.cache.DIRTY);
+    return this;
   };
 
   Layer.prototype.undirty = function() {
-    if (this.cache & meta.cache.USE) {
-      this.cache &= ~meta.cache.DIRTY;
-    }
-  };
-
-  Layer.prototype.z = function(z) {
-    this.zorder = z;
-    this.canvas.setAttribute('style',
-      DEFAULT_STYLE + ' z-index: ' + z + ';');
+    var code = this.getCacheCode();
+    if (code & meta.cache.USE)
+      this.setCacheCode(code & ~meta.cache.DIRTY);
+    return this;
   };
 
   Layer.prototype.index = function(surface) {
@@ -158,19 +267,22 @@
 
     // Blit the pixels.
     if (meta.undef(params.dw)) {
-      this.getPrimaryContext(surface).drawImage(image.img,
+      this.getPrimaryContext(surface).drawImage(
+          image.img,
           round(params.dx),
           round(params.dy)
           );
     } else if (meta.undef(params.sx)) {
-      this.getPrimaryContext(surface).drawImage(image.img,
+      this.getPrimaryContext(surface).drawImage(
+          image.img,
           round(params.dx),
           round(params.dy),
           round(params.dw),
           round(params.dh)
           );
     } else {
-      this.getPrimaryContext(surface).drawImage(image.img,
+      this.getPrimaryContext(surface).drawImage(
+          image.img,
           round(params.sx),
           round(params.sy),
           round(params.sw),
@@ -243,7 +355,6 @@
           );
     } catch (e) {
       this.corrupt = true;
-      alert(Object.toJSON(rect));
       // TODO: safely expand without the exception.
     }
   };
