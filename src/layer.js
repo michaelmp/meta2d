@@ -4,7 +4,7 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
-  var DEFAULT_STYLE = 'position: absolute; left:0px; top:0px;';
+  var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
 
   var round = function(val) {
     return (0.5 + val) << 0;
@@ -31,6 +31,8 @@
     shadowBlur: void 0,
     shadowColor: void 0
   };
+
+  // Read-only attributes.
   var CONTEXT_ATTRIBUTES_RO = {
     canvas: void 0
   };
@@ -78,7 +80,7 @@
 
     canvas_.width = params.w;
     canvas_.height = params.h;
-    canvas_.setAttribute('style', DEFAULT_STYLE);
+    canvas_.setAttribute('style', CANVAS_STYLE);
     ctx_ = canvas_.getContext('2d');
 
     /**
@@ -366,7 +368,7 @@
           InvalidParameterException('value', value);
       zorder_ = value;
       this.getNativeCanvas().setAttribute('style',
-        DEFAULT_STYLE + ' z-index: ' + value + ';');
+        CANVAS_STYLE + ' z-index: ' + value + ';');
       return this;
     };
 

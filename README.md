@@ -1,4 +1,4 @@
-Meta2D
-======
+MetaContext2D
+=============
 
-#### to be elaborated... ####
+#### An augmented Context2D for Canvas ####
