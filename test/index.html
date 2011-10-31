@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <script type="text/javascript" src="meta2d.js"></script>
+  </head>
+  <body>
+    <div id="results"></div>
+
+  <script type="text/javascript">
+    var output = document.getElementById('results');
+    var print = function(msg) {
+      output.textContent += msg;
+    };
+    var assert = function(cond, passmsg, failmsg) {
+      print('<br />');
+      print(cond ? passmsg : failmsg);
+    };
+  </script>
+
+  <script type="text/javascript" src="rect.js"></script>
+  
+  </body>
+</html>

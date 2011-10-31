@@ -1,10 +1,11 @@
 =begin
   A simple build script for meta2d.js.
-  + jsmin
-  + gzip
+  Includes jsmin and gzip target options (on by default).
 
   How to use this build script:
-    run `rake'
+    (1) Install rake for your system.
+    (2) Run `rake' in your terminal.
+    (3) All builds are output to `build' directory.
 =end
 
 directory "build"
@@ -30,6 +31,9 @@ sourcefiles = [
   "src/math/rect.js"
   ]
 
+signature = %{"meta2d.js (c) 2011 Michael Morris-Pearce
+// @see https://gitorious.org/meta2d/ for more information."}
+
 desc "Combine all javascript source files into a single file."
 task :merge => "build" do
   puts "Merging src/*.js into build/meta2d.js"
@@ -49,7 +53,7 @@ end
 desc "Minify the javascript source."
 task :minify => ['jsmin/bin/jsmin'] do
   puts "Minifying build/meta2d.js as build/meta2d.min.js..."
-  sh "'jsmin/bin/jsmin' < 'build/meta2d.js' > 'build/meta2d.min.js'"
+  sh "'jsmin/bin/jsmin' < 'build/meta2d.js' > 'build/meta2d.min.js' " + signature
   puts "Done minifying."
   puts ""
 end
