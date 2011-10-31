@@ -1,5 +1,3 @@
-// provides:
-//  meta2d.Context -- class
 (function() {
   'use strict';
   var root = this;
@@ -10,8 +8,8 @@
 
   // given an array of ids, returns [ids] x [0, n) --> [id.0, id.n)
   var build_ids = function(ids, n) {
-    var newids = new Array();
-    ids.each(function(id){
+    var newids = [];
+    ids.forEach(function(id){
         for (var i = 0; i < n; ++i) {
           newids.push(id+'.'+(i).toPaddedString(1));
         }
@@ -39,10 +37,27 @@
    * This class is kind of important...
    *
    * @constructor
+   * Creates a new DOM element and inserts it into the given parent element.
+   * Initializes as a single-layered (identified by the empty string '')
+   * canvas with height and width specified in the params argument. This and
+   * all subsequent layers are represented in the DOM as canvas elements
+   * inside of the newly created element (a div, in which all canvases are
+   * relatively positioned so as to overlap). This new div element is placed
+   * inside of the specified parent element.
+   * @param [String|DOMElement] parent
+   * @param [{w, h}] params
    */
   var Context = function(parent, params) {
-    if (!parent) throw new meta.InvalidParameterException('parent', parent);
-    if (meta.isString(parent)) parent = document.getElementById(parent);
+    if (meta.isString(parent))
+      parent = document.getElementById(parent);
+    if (meta.undef(parent))
+      throw new meta.exception.
+        InvalidParameterException('parent', parent);
+    if (meta.undef(params))
+      throw new meta.exception.
+        InvalidParameterException('params', params);
+
+    // Private members.
     var ctx_ = this;
     var data_ = {
       animations: {};
@@ -55,6 +70,10 @@
     var cursorPosition_ = {};
     var cameraPosition_ = {};
     var cameraProjection_ = {};
+
+    // Public members.
+    this.parent = document.createElement('div');
+    this.params = params;
 
     /**
      * @privileged
@@ -353,7 +372,7 @@
     /**
      * @privileged
      * @method getLayerByName
-     * @param [String name]
+     * @param [String] name
      * @return [meta::Layer]
      */
     this.getLayerByName = function(name) {
@@ -399,23 +418,13 @@
       throw new meta.UnimplementedMethodException('getLayerSelectionName');
     }; 
 
-
-
-
-
-
-
-
-
-
-
     /**
     this.getObjectsByTags = function(tags) {
       if (meta.undef(tags)) throw 'Invalid parameters.';
       if (meta.isString(tags)) tags = tags.split(' ');
-      var hashset = new Hash();
+      var hashset = {};
       var ctx = this;
-      tags.each(function(tag) {
+      tags.forEach(function(tag) {
           var objects = ctx.getObjectsByTag(tag);
           if (objects) hashset.update(objects);
           });
@@ -424,9 +433,9 @@
 
     this.tagObject = function(tags, object) {
       if (meta.isString(tags)) tags = tags.split(' ');
-      tags.each(function(tag) {
+      tags.forEach(function(tag) {
           var hashset = tagmap_.get(tag);
-          if (!hashset) hashset = new Hash();
+          if (!hashset) hashset = {};
           hashset.set(object.id, object);
           tagmap_.set(tag, hashset);
           });
@@ -440,7 +449,6 @@
           });
       return ls;
     };
-
 
     this.getHighestObject = function(params) {
       var ls = this.getSortedLayers().reverse();
@@ -530,23 +538,14 @@
     };
     */
 
-    this.parent = document.createElement('div');
-    this.params = params || {w: 100, h: 100};
-    this.resize(params);
-    parent.appendChild(this.parent);
-    Event.observe(this.parent, 'click', this.click.bind(this));
-    Event.observe(this.parent, 'mousemove', this.mousemove.bind(this));
 
-    //this.setLayer('', new meta.Layer(this.parent, this.params));
-
-
-    var backoff = backoffToSelectedLayer;
-    //
     // CanvasRenderingContext2D methods, multiplexed to selected layer.
     // All are privileged due to strict mode context rules. Defining inside of
     // [[proto]] would require an unexplicitly-bound closure, as the thisArg
     // is not known until instantiation, so 'backoffToSelectedLayer' must
     // return a closure with the instance object explicitly-bound.
+    //
+    var backoff = backoffToSelectedLayer;
     //
     this.save = backoff.call(this,'save');
     this.restore = backoff.call(this,'restore');
@@ -596,68 +595,59 @@
     this.getImageData = backoff.call(this, 'getImageData');
     this.putImageData = backoff.call(this, 'putImageData');
 
+    // Initialize the DOM element and 
+    this.resize(params);
+    parent.appendChild(this.parent);
+    Event.observe(this.parent, 'click', this.click.bind(this));
+    Event.observe(this.parent, 'mousemove', this.mousemove.bind(this));
+
   };
 
   // Access native Context2D members per selected layer.
   // NOTE: Access could be implemented using getters/setters on properties,
   // but getters/setters & read-only property values are poorly-supported
   // in IE & Opera as of this authoring.
+  /**
+   * @method setContextProperty
+   * @param [String] name
+   * @param [any] value
+   * @return [meta::Context]
+   */
   Context.prototype.setContextProperty = function(name, value) {
     var layer = this.getSelectedLayer();
     if (meta.undef(layer)) return this;
     layer.setContextProperty(name, value);
     return this;
   };
-  Context.prototype.getContextProperty = function(name, value) {
+  /**
+   * @method getContextProperty
+   * @param [String] name
+   * @return [any]
+   */
+  Context.prototype.getContextProperty = function(name) {
     var layer = this.getSelectedLayer();
     if (meta.undef(layer)) return void 0;
-    return layer.getContextProperty(name, value);
+    return layer.getContextProperty(name);
   };
 
-
-
-
-
-
-
-
-
-
   /**
-   * Draws to active layer the list of draw commands.
+   * @method draw
+   * Draws a list of drawing instructions on the active layer, cacheing where
+   * appropriate.
+   * @param [Array<Object>] list
+   * @return [meta::Context]
    */
-  Context.prototype.draw = function(params) {
-    this.getLayerByName(this.getActiveLayerName()).draw(params, this);
+  Context.prototype.draw = function(list) {
+    this.getLayerByName(this.getActiveLayerName()).draw(this, list);
     return this;
   };
-
-  /**
-   * create a new animation.
-   * @param name -- identifier for animation.
-   * @return Animation
-   */
-  Context.prototype.animation = function(name) {
-    if (!name) return null;
-    if (!this.getAnimationByName(name))
-      this.setAnimation(name, new meta.Animation());
-    return this.getAnimationByName(name);
-  };
-
-  /**
-   * select object(s) that contain some tag.
-   *
-   * @param tags {String | Array[String]}
-   * @return Selector
-   */
-  Context.prototype.get = function(tags) {
-    return this.select(tags);
-  };
-
+  
   /**
    * put several objects into the active layer, indexing over an arbitrary number
    * of dimensions.
    * @return Selector
    */
+  /**
   Context.prototype.array = function(tag) {
     var dimensions = arguments.length - 1;
     var ids = $A([tag]);
@@ -665,7 +655,7 @@
     for (var d = 1; d < dimensions + 1; ++d) {
       ids = build_ids(ids, arguments[d]);
     }
-    ids.each(function(id){
+    ids.forEach(function(id){
         var stringdims = id.split('.').splice(1, dimensions);
         var numdims = stringdims.map(function(s){
           return parseInt(s);
@@ -678,6 +668,7 @@
     });
     return this.select(tag);
   };
+  */
 
   /**
    * put a new object identified by a set of tags into the active layer with
@@ -688,6 +679,7 @@
    * @param bound -- [optional] bounding box for spatial indexing.
    * @return Selector
    */
+  /**
   Context.prototype.put = function(tags, data, bound) {
     if (meta.isString(tags)) tags = tags.split(' ');
 
@@ -710,189 +702,18 @@
 
     return this.select(tags);
   };
+  */
 
   /**
-   * blocks execution of a function until all images and sounds are finished
-   * loading.
-   *
-   * @param f -- callback function when ready
-   * @param args -- array of arguments for the callback
+   * @method render
+   * @param [meta::math::Rect] rect
+   * @return [meta::Context]
    */
-  Context.prototype.wait = function(f, args) {
-    if (this.loading()) {
-      setTimeout(this.wait.curry(f, args), 50);
-      return this;
-    }
-    f.apply(this, args);
-    return this;
-  };
-
-  /**
-   * move object(s) to a new layer.
-   *
-   * @param tags -- selection tags
-   * @param layer -- the destination layer
-   */
-  Context.prototype.move = function(tags, layer) {
-    throw 'Unimplemented.';
-  };
-
-  /**
-   * set the active layer, creating a new layer if it does not already exist.
-   * disallows selection of accumulation layer ('').
-   *
-   * @param name -- identifier
-   * @return Context
-   */
-  Context.prototype.layer = function(name) {
-    if (!name) return this;
-    if (!this.getLayerByName(name))
-      this.setLayer(name, new meta.Layer(this.parent, this.params));
-    this.setActiveLayer(name);
-    return this;
-  };
-
-  /**
-   * builds the spatial index of active layer.
-   */
-  Context.prototype.index = function() {
-    this.getLayerByName(this.getActiveLayerName()).index(this);
-    return this;
-  };
-
-  /**
-   * rebuilds the rtree and updates a specific region of active layer's
-   * spatial index.
-   */
-  Context.prototype.reindex = function(rect) {
-    this.getLayerByName(this.getActiveLayerName()).index(this, rect);
-    return this;
-  };
-
-  /**
-   * create a new image.
-   *
-   * @param name -- identifier
-   * @param params -- see image parameters
-   * @return Context
-   */
-  Context.prototype.image = function(name, params) {
-    if (!name) return this;
-    if (!this.getImageByName(name))
-      this.setImage(name, new meta.Image(params));
-    return this;
-  };
-
-  /**
-   * erase graphics from the active layer.
-   *
-   * @return Context
-   */
-  Context.prototype.clear = function() {
-    this.getLayerByName(this.getActiveLayerName()).clear(this);
-    return this;
-  };
-
-  /**
-   * set the z order of the active layer.
-   *
-   * @param order -- depth in rendering
-   * @return Context
-   */
-  Context.prototype.z = function(order) {
-    this.getLayerByName(this.getActiveLayerName()).z(order);
-    return this;
-  };
-
-  /**
-   * set the parallax of the active layer.
-   *
-   * @param vector parallax -- proportional response to camera motion
-   * @return Context
-   */
-  Context.prototype.parallax = function(parallax) {
-    this.getLayerByName(this.getActiveLayerName()).parallax = parallax;
-    return this;
-  };
-
-  /**
-   * make active layer responsive to camera.
-   */
-  Context.prototype.useCamera = function() {
-    return this.parallax(meta.V([1, 1, 1]));
-  };
-
-  /**
-   * mark active layer for cacheing.
-   */
-  Context.prototype.useCache = function() {
-    var layer = this.getLayerByName(this.getActiveLayerName());
-    var cache = layer.cache;
-    cache |= meta.cache.USE;
-    cache |= meta.cache.DIRTY;
-    layer.cache = cache;
-    return this;
-  };
-
-  /**
-   * mark the active layer in need for redrawing.
-   */
-  Context.prototype.dirty = function() {
-    this.getLayerByName(this.getActiveLayerName()).dirty();
-    return this;
-  };
-
-  /**
-   * unmark the active layer for cacheing..
-   */
-  Context.prototype.noCache = function() {
-    this.getLayerByName(this.getActiveLayerName()).cache = meta.cache.IGNORE;
-    return this;
-  };
-
-  /**
-   * set the camera to position specified, with indicated projection rule.
-   *
-   * @param {v} posthe new camera position
-   * @return Context
-   */
-  Context.prototype.camera = function(pos, projection) {
-    if (!pos) return this.getCamera();
-    this.setCamera(pos);
-    if (!projection) return this;
-    this.setCameraProjection(projection);
-    return this;
-  };
-
-  /**
-   * erase graphic content on all non-prebuffer layers.
-   *
-   * @return Context
-   */
-  Context.prototype.clearAll = function() {
-    var active = this.getActiveLayerName();
-    var ctx = this;
-    this.getLayerNames().each(function(name) {
-        // Context::layer will skip accumulation layer.
-        ctx.layer(name).clear(ctx);
+  Context.prototype.render = function(rect) {
+    var layers = this.getSortedLayers();
+    layers.forEach(function(l) {
+        l.render(rect);
         });
-    return this.layer(active);
-  };
-
-  /**
-   * @param string name -- name of layer, cannot be empty string.
-   * @return Context
-   */
-  Context.prototype.accumulate = function(name) {
-    if (name === '') return this;
-    var ctx = this;
-    if (meta.undef(name)) {
-      var layers = this.getSortedLayers();
-      for (var l = 0; l < layers.length; l++) {
-        ctx.accumulate(layers[l]);
-      }
-      return this;
-    }
 
     // Temporarily change active layer.
     var restore = this.getActiveLayerName();
@@ -952,11 +773,8 @@
         // Fetch display list, allow direct rendering & transformations.
         this.push();
         var drawlist = obj.draw.call(obj, this);
-        if(drawlist){
-          for (var l = 0; l < drawlist.length; l++) {
-            ctx.draw(drawlist[l]);
-          }
-        }
+        if (meta.def(drawlist))
+          ctx.draw(drawlist[l]);
         this.pop();
 
         // restart if the layer was resized.
@@ -979,7 +797,6 @@
     return this;
   };
 
-
   /**
   Context.prototype.applyCameraToPosition = function(pos) {
     if (!(this.getCamera() || this.getCameraProjection())) return pos;
@@ -997,14 +814,15 @@
   */
 
   /**
-   * Push each layer's backbuffer to screen.
-   * @return Context
+   * @method flipAllLayers
+   * Push each layer's buffered pixel data to the screen.
+   * @return [meta::Context]
    */
-  Context.prototype.render = function() {
-    var ctx = this;
-    this.getLayers().each(function(layer) {
-      layer.flip(ctx);
-    });
+  Context.prototype.flipAllLayers = function() {
+    this.getLayers().forEach(function(l) {
+        l.flip(this);
+        }, this);
+    return this;
   };
 
   /**
@@ -1100,21 +918,26 @@
   };
 
   /**
-   * adjust the size of the canvas and all layers.
+   * @method resize
+   * Adjust the canvas size on all layers.
    *
-   * @param params.w -- parameters
-   *            .h
-   * @return Context
+   * @param [{w, h}] params
+   * @return [meta::Context]
    */
   Context.prototype.resize = function(params) {
-    if (!this.parent) return this;
-    if (!params || !params.w || !params.h) throw 'Invalid parameters.';
-    this.size = params;
-    var style = 'width:' + params.w  + 'px; height:' + params.h + 'px; position: relative';
-    this.parent.setAttribute('style', style);
-    this.getLayers().each(function (layer) {
-        layer.resize(params, true);
-        });
+    if (meta.undef(params)
+        meta.undef(params.w) ||
+        meta.undef(params.h))
+      throw new meta.exception.
+        InvalidParameterException('params', params);
+    var style =
+      'width: ' + params.w + 'px;' +
+      'height: ' + params.h + 'px;' +
+      'position: relative;';
+    this.getParent().setAttribute('style', style);
+    this.getLayers().forEach(function(l) {
+        l.resize(params);
+        }, this);
     return this;
   };
 

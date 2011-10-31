@@ -12,7 +12,7 @@
   var on = function(event) {
     return function(f) {
       //if (!f) f = null;
-      this.items.each(function(item) {
+      this.items.forEach(function(item) {
           item[event] = f;
           });
       return this;
@@ -38,8 +38,8 @@
    * @param f(item) -- function to apply to items
    * @return Selector
    */
-  Selector.prototype.each = function(f) {
-    this.items.each(f);
+  Selector.prototype.forEach = function(f) {
+    this.items.forEach(f);
     return this;
   };
 
@@ -64,13 +64,13 @@
   Selector.prototype.data = function(key, val) {
     if (!key) return this;
     if (!val) {
-      var output = new Array();
-      this.items.each(function(item){
+      var output = [];
+      this.items.forEach(function(item){
           output.push(item.data[key]);
           });
       return output;
     }
-    this.items.each(function(item){
+    this.items.forEach(function(item){
         item.data[key] = val;
         });
     return this;
@@ -81,7 +81,7 @@
    * applied before each call to the objects draw method.
    */
   Selector.prototype.project = function(projection) {
-    this.items.each(function(item){
+    this.items.forEach(function(item){
         item.projection = projection;
         });
     return this;
@@ -90,7 +90,7 @@
   /**
    */
   Selector.prototype.reindex = function(surface) {
-    this.items.each(function(item) {
+    this.items.forEach(function(item) {
         if (!item.data || !item.data.layer) return;
         var layer = surface.getLayerByName(item.data.layer);
         if (!layer) return;
@@ -109,12 +109,12 @@
    * @return Selector
    */
   Selector.prototype.clickmask = function(f_array) {
-    f_array = $A(f_array);
-    this.items.each(function(item){
-        item.clickmask = new Array();
-        f_array.each(function(f){
-          item.clickmask.push(f);
-          });
+    f_array = Array.apply([], f_array);
+    this.items.forEach(function(item){
+        item.clickmask = [];
+        f_array.forEach(function(f){
+            item.clickmask.push(f);
+            });
         });
     return this;
   };
@@ -146,7 +146,7 @@
 
   // trigger user-defined events
   Selector.prototype.trigger = function(name) {
-    this.items.each(function(item){
+    this.items.forEach(function(item){
         if (item[name]) item[name].call(item, item.data);
         });
     return this;

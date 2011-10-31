@@ -25,9 +25,9 @@
    * end frame so that the effect is easily reversed.
    */
   var Animation = function() {
-    var frames = new Hash();
-    var tweens = new Array();
-    var data = new Hash();
+    var frames_ = {},
+        tweens_ = [],
+        data_ = {};
 
     var apply_tweens = function(tween_array, index) {
       var obj_builder = {};
@@ -40,13 +40,13 @@
 
     this.putFrame = function(index, data) {
       if (!index || !data) return this;
-      frames.put(index, data);
+      frames_[index] = data;
       return this;
     },
 
     this.getFrame = function(index) {
       if (meta.undef(index)) return null;
-      var f = frames.get(index);
+      var f = frames_[index];
       if (f) return f;
       var intersecting_tweens = tweens.filter(function(s){
           return s.segment.include(index);
@@ -55,7 +55,7 @@
     }
 
     this.deleteFrame = function(index) {
-      frames.unset(index);
+      delete frames_[index];
       return this;
     };
 
@@ -64,8 +64,8 @@
       if (!params.tween) throw 'Invalid parameters.';
       var arg = {
         segment: params.segment,
-        startframe: frames.get(params.segment.start),
-        endframe: frames.get(params.segment.end)
+        startframe: frames_[params.segment.start],
+        endframe: frames_[params.segment.end]
       };
       var fixed = params.tween.fix.call(this, arg);
       if (!fixed) return this;

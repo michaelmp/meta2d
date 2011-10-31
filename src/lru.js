@@ -29,17 +29,21 @@
     /**
      * Unlink the tail element for garbage collection iff the cache is
      * beyond its set capacity, decreasing size count.
+     * @return [Array]
      */
     var trim = function() {
-      if (size <= capacity) return;
-      if (!tail) return;
-      pluck(tail);
+      if (size <= capacity) return [];
+      if (!tail) return [];
+      return pluck(tail);
     };
 
     /**
      * Remove a node and decrease size count.
+     * @return [Array]
      */
     var pluck = function(node) {
+      var removed = [];
+
       // Modify links of adjacent nodes.
       if (tail && (tail.key === node.key)) {
         if (node.prev) {
@@ -65,9 +69,12 @@
 
       // Remove the reference.
       if (map[node.key]) {
+        removed.push(map[node.key]);
         map[node.key] = undefined;
         size -= 1;
       }
+
+      return removed;
     };
 
     /**
@@ -109,31 +116,41 @@
     };
 
     /**
+     * @return [Array]
+     */
+    this.pluck = function(key) {
+      var node = map[key],
+          removed = [];
+
+      if (node) removed = pluck(node);
+
+      return removed;
+    };
+
+    /**
      * Sets or overwrites the value associated with key. Size count increases
      * up to capacity iff the key was not already present.
-     * @return true iff the new (key, val) is stored in cache.
+     * @return [Array]
      */
     this.update = function(key, val) {
       // Retrieve old node if it exists, or make a new one.
       var node = map[key] || {key: key};
+
       node.val = val;
 
       // Reorder the list with this node in front.
       prioritize(node);
 
-      // Remove the tail if beyond capacity.
-      trim();
-
       // (key, val) is in cache unless capacity is zero.
-      return capacity > 0;
+      return trim();
     };
 
     /**
      * Will not overwrite existing value.
-     * @return true iff the new (key, val) is stored in cache.
+     * @return [Array]
      */
     this.add = function(key, val) {
-      if (map[key]) return false;
+      if (map[key]) return [];
       return this.update(key, val);
     };
 

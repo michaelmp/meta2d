@@ -56,7 +56,7 @@
     layer = layer || new meta.Layer(void 0, {w: w, h: h});
     if (scale) layer.context.scale(scale, scale);
     if (this.children) {
-      this.children.each(function(child) {
+      this.children.forEach(function(child) {
           child.rtree.debug(w, h, layer, void 0);
           layer.context.strokeStyle = 'rgba(0,0,255,0.2)';
           layer.context.lineWidth = 1;
@@ -67,7 +67,7 @@
           });
     }
     if (this.data) {
-      this.data.each(function(datum) {
+      this.data.forEach(function(datum) {
           layer.context.fillStyle = 'rgba(255,0,0,0.2)';
           layer.context.fillRect(datum.rect.x,
             datum.rect.y,
@@ -80,39 +80,73 @@
     }
   };
 
-  /**
-   * @param remove [optional] if true-evaluating will remove all hit objects
-   *   from the data structure before returning them.
-   * @return {array} objects that collide with rectangle key.
-   */
-  RTree.prototype.search = function(rect, remove) {
+  RTree.prototype.query = function(f, remove) {
+    var hits = [],
+        merged = [];
+
     if (meta.def(this.data)) {
-      var intersect = new Array();
-      for (var i = 0; i < this.data.length; i++) {
-        if (meta.collision.BBOX.collides(
-              void 0,
-              this.data[i].rect,
-              rect)) {
-          intersect.push(this.data[i].object);
-          if (remove) this.data[i] = undefined;
-        }
-      }
-      if (remove) this.data = this.data.compact();
-      return intersect;
+      this.data.forEach(function(d, idx, array) {
+          if (!f.call(void 0, d.rect)) return;
+          hits.push(d.object);
+          if (remove) array[idx] = void 0;
+          });
+      if (remove) this.data = this.data.filter(meta.def);
+      return hits;
     }
+
     if (meta.undef(this.children))
       return [];
-    var merge = new Array();
-    for (var i = 0; i < this.children.length; i++) {
-      if (!meta.collision.BBOX.collides(
-            void 0,
-            this.children[i].rect,
-            rect))
-        continue;
-      var subdata = this.children[i].rtree.search(rect, remove);
-      merge = merge.concat(subdata);
-    }
-    return merge;
+
+    children.forEach(function(c) {
+        if (!f.call(void 0, c.rect)) return;
+        merged = merged.concat(c.rtree.query(f, remove));
+        });
+
+    return merged;
+  };
+
+  RTree.prototype.search = function(rect, remove) {
+    var f = function(r) {
+      return r.intersect(rect);
+    };
+    return this.query(f, remove);
+  };
+
+  RTree.prototype.searchAndRemove = function(rect) {
+    return this.search(rect, true);
+  };
+
+  RTree.prototype.find = function(rect, remove) {
+    var f = function(r) {
+      return r.sameAs(rect);
+    };
+    return this.query(f, remove);
+  };
+
+  RTree.prototype.findAndRemove = function(rect) {
+    return this.find(rect, true);
+  };
+
+  RTree.prototype.searchInside = function(rect, remove) {
+    var f = function(r) {
+      return r.containedBy(rect);
+    };
+    return this.query(f, remove);
+  };
+
+  RTree.prototype.searchInsideAndRemove = function(rect) {
+    return this.searchInside(rect, true);
+  };
+
+  RTree.prototype.searchOutside = function(rect, remove) {
+    var f = function(r) {
+      return !r.intersect(rect);
+    };
+    return this.query(f, remove);
+  };
+
+  RTree.prototype.searchOutsideAndRemove = function(rect) {
+    return this.searchOutside(rect, true);
   };
 
   /**
@@ -123,7 +157,6 @@
    * Child nodes exist:
    *   Chooses a child to receive {key, object}, expanding its bounds, and
    *   recursively inserting.
-   * @return the node that the object was placed in.
    */
   RTree.prototype.insert = function(rect, object) {
     // Defer to child that needs least expansion of its bounds.
@@ -134,42 +167,36 @@
     }
 
     // Add new data.
-    this.data = this.data || new Array();
+    this.data = this.data || [];
     this.data.push({
-      rect: rect,
-      object:object
-      });
+        rect: rect,
+        object: object
+        });
 
     // Expand if capacity reached, and distribute data among children.
     if (this.data.length >= this.capacity) {
-      var rtree = this;
-      var move_datum = function (i) {
-        var child = {
-          rtree: new meta.RTree(rtree.capacity),
-          rect: rtree.data[i].rect
-        };
-        child.rtree.insert(rtree.data[i].rect, rtree.data[i].object);
-        rtree.children = rtree.children || new Array();
-        rtree.children.push(child);
-      }
-      for (var i = 0; i < this.data.length; i++) {
-        move_datum(i);
-      }
+      var rtree = this,
+          move_datum = function (i) {
+            var child = {
+              rtree: new meta.RTree(rtree.capacity),
+              rect: rtree.data[i].rect
+            };
+
+            child.rtree.insert(rtree.data[i].rect, rtree.data[i].object);
+            rtree.children = rtree.children || [];
+            rtree.children.push(child);
+          };
+
+      this.data.forEach(function(d, i) {
+          move_datum(i);
+          });
       this.data = undefined;
+
       return true;
     }
 
     // Tree was unchanged.
     return false;
-  };
-
-  /**
-   * Retrieve all children inside the key, pruning from nodes.
-   * @return {array}
-   */
-  RTree.prototype.remove = function(rect) {
-    var ret = this.search(rect, true);
-    return ret;
   };
 
   meta.RTree = RTree;
