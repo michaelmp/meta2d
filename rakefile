@@ -10,29 +10,31 @@
 directory "build"
 directory "jsmin/bin"
 
-# order matters
+# Order matters: most source files are dependent on meta2d.js and modifier.js.
 sourcefiles = [ 
   "src/meta2d.js",
   "src/modifier.js",
   "src/animation.js",
   "src/collision.js",
+  "src/context.js",
   "src/image.js",
   "src/layer.js",
   "src/lru.js",
   "src/process.js",
   "src/projection.js",
+  "src/rcache.js",
   "src/rtree.js",
   "src/segment.js",
   "src/selector.js",
-  "src/context.js",
-  "src/tween.js"
+  "src/tween.js",
+  "src/math/rect.js"
   ]
 
 desc "Combine all javascript source files into a single file."
 task :merge => "build" do
   puts "Merging src/*.js into build/meta2d.js"
   sh "cat " + sourcefiles.join(" ") + " > 'build/meta2d.js'"
-  puts "Done."
+  puts "Done merging source."
   puts ""
 end
 
@@ -40,26 +42,29 @@ desc "Build the jsmin binary."
 file 'jsmin/bin/jsmin' => ['jsmin/src/jsmin.c', 'jsmin/bin'] do
   puts "Building jsmin from source..."
   sh "gcc jsmin/src/jsmin.c -o jsmin/bin/jsmin"
-  puts "Done."
+  puts "Done building jsmin."
   puts ""
 end
 
 desc "Minify the javascript source."
 task :minify => ['jsmin/bin/jsmin'] do
-  puts "Minifying build/meta2d.js as build/meta2d.min.js"
+  puts "Minifying build/meta2d.js as build/meta2d.min.js..."
   sh "'jsmin/bin/jsmin' < 'build/meta2d.js' > 'build/meta2d.min.js'"
-  puts "Done."
+  puts "Done minifying."
   puts ""
 end
 
 desc "Export a gzip-compressed copy of all builds."
 task :compress do
-  puts "Not gzipping this time"
+  puts "gzipping build files..."
+  sh "gzip -c build/meta2d.js > build/meta2d.js.gz"
+  sh "gzip -c build/meta2d.min.js > build/meta2d.min.js.gz"
+  puts "Done compressing."
   puts ""
 end
 
 desc "Merge, minify, and compress source code."
 task :default => [:merge, :minify, :compress] do
-  puts "Done."
+  puts "All done!"
   puts ""
 end
