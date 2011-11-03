@@ -2,10 +2,9 @@
 <html>
   <head>
     <title>meta2d.js All Tests</title>
-    <script type="text/javascript" src="meta2d.js"></script>
   </head>
   <body>
-  <div id="summary">Running tests...</div>
+  <div id="summary">Loading ...</div>
   <div id="results"></div>
 
   <style>
@@ -37,46 +36,15 @@
     }
   </style>
 
-  <noscript>You will need to enable Javascript to run the tests in your browser.</noscript>
+  <noscript>
+    You will need to enable Javascript to run the tests in your browser.
+  </noscript>
 
-  <script type="text/javascript">
-    var output = document.getElementById('results'),
-        summary = document.getElementById('summary'),
-        passed = failed = 0;
+  <!-- Load library and testbed -->
+  <script type="text/javascript" src="meta2d.js"></script>
+  <script type="text/javascript" src="webtest.js"></script>
 
-    this.print = function(msg) {
-      output.innerHTML += msg;
-      setTimeout(function(){}, 0);
-    };
-    this.println = function(msg) {
-      this.print(msg + '<br />');
-    };
-    this.printheader = function(msg) {
-      this.println('');
-      this.print('<h1>' + msg + '</h1>');
-    };
-    this.printsection = function(msg) {
-      this.print('<h2>' + msg + '</h2>');
-    };
-    this.assert = function(msg, cond) {
-      if (cond) {
-        passed += 1;
-      } else {
-        failed += 1;
-      }
-      println(msg + ': ' + (cond ?
-            '<div class="pass">pass</div>' :
-            '<div class="fail">fail</div>'));
-    };
-    this.summarize = function(msg) {
-      var cls = failed === 0 ? 'pass' : 'fail';
-      summary.innerHTML =
-        '<div class="'+cls+'">' +
-        passed + '</div>/' + (passed + failed) +
-        ' total tests passed';
-    };
-  </script>
-
+  <!-- Modules to test -->
   <script type="text/javascript" src="rect.js"></script>
   <script type="text/javascript" src="segment.js"></script>
   <script type="text/javascript" src="tween.js"></script>
