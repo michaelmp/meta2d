@@ -67,14 +67,23 @@
       twn5.fix(seg2)(-1.00000001).a === 1);
 
   printsection('modified offset');
-  
-  assert('correctness');
+  twn5.modify(meta2d.modifier.offset(2));
+  assert('correctness',
+      twn5.fix(seg2)(-0.99999999).a === 2 &&
+      twn5.fix(seg2)(-1.00000001).a === 3);
 
   printsection('modified scale');
-  assert('correctness');
+  twn5.modify(meta2d.modifier.scale(-0.5));
+  assert('correctness',
+      twn5.fix(seg2)(-0.99999999).a === -1 &&
+      twn5.fix(seg2)(-1.00000001).a === -1.5);
 
   printsection('modified limit');
-  assert('correctness');
+  twn5.modify(meta2d.modifier.offset(1.25));
+  twn5.modify(meta2d.modifier.limit(-0.2, 0.2));
+  assert('correctness',
+      twn5.fix(seg2)(-0.99999999).a === -0.05 &&
+      twn5.fix(seg2)(-1.00000001).a === 0.05);
 
   printsection('modified quantization');
   assert('fixed interval');
@@ -84,7 +93,6 @@
 
   printsection('modified extrapolation');
   assert('cycle');
-  assert('sustain');
 
   printsection('modified s-curve');
   assert('');

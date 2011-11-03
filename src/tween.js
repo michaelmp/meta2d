@@ -125,7 +125,7 @@
   };
 
   // @return [meta2d::Modifier<meta2d.TweenType>]
-  var shift = function(amt) {
+  var shift = function(val) {
     var o = function() {
       meta.Modifier.call(this, meta.TweenType);
       this.modify = function(tween) {
@@ -138,7 +138,7 @@
       return function() {
         var fixed = f.apply(this, arguments);
         return function(t) {
-          return fixed(t + amt);
+          return fixed(t + val);
         };
       };
     };
@@ -168,6 +168,78 @@
     return new o();
   };
 
+  // @return [meta2d::Modifier<meta2d.TweenType>]
+  var offset = function(val) {
+    var o = function() {
+      meta.Modifier.call(this, meta.TweenType);
+      this.modify = function(tween) {
+        tween.fix = this.wrap(tween.fix);
+      };
+    };
+
+    o.prototype.wrap = function(f) {
+      // #[meta2d::Context]
+      return function() {
+        var fixed = f.apply(this, arguments);
+        return function(t) {
+          return fixed(t) + val;
+        };
+      }
+    };
+
+    return new o();
+  };
+
+  // @return [meta2d::Modifier<meta2d.TweenType>]
+  var scale = function(val) {
+    var o = function() {
+      meta.Modifier.call(this, meta.TweenType);
+      this.modify = function(tween) {
+        tween.fix = this.wrap(tween.fix);
+      };
+    };
+
+    o.prototype.wrap = function(f) {
+      // #[meta2d::Context]
+      return function() {
+        var fixed = f.apply(this, arguments);
+        return function(t) {
+          return fixed(t) * val;
+        };
+      }
+    };
+
+    return new o();
+  };
+
+  // @return [meta2d::Modifier<meta2d.TweenType>]
+  var limit = function(lower, upper) {
+    if (upper < lower) throw new meta.exception.InvalidParameterException();
+    var o = function() {
+      meta.Modifier.call(this, meta.TweenType);
+      this.modify = function(tween) {
+        tween.fix = this.wrap(tween.fix);
+      };
+    };
+
+    o.prototype.wrap = function(f) {
+      // #[meta2d::Context]
+      return function() {
+        var fixed = f.apply(this, arguments);
+        return function(t) {
+          var val = fixed(t);
+
+          if (meta.def(lower)) val = Math.max(lower, val);
+          if (meta.def(upper)) val = Math.min(upper, val);
+
+          return val;
+        };
+      }
+    };
+
+    return new o();
+  };
+
   meta.tween = meta.declareSafely(meta.tween, {
     constant: constant,
     linear: linear,
@@ -180,7 +252,13 @@
   
   meta.modifier = meta.declareSafely(meta.modifier, {
     shift: shift,
-    reverse: reverse
+    reverse: reverse,
+    offset: offset,
+    scale: scale,
+    limit: limit,
+    quantize: quantize,
+    envelope: envelope,
+    cycle: cycle
   });
 
 }).call(this);
