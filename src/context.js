@@ -58,18 +58,18 @@
         InvalidParameterException('params', params);
 
     // Private members.
-    var ctx_ = this;
-    var data_ = {
-      animations: {};
-      images: {};
-      layers: {};
-      entities: {};
-    };
-    var selectedLayers_ = [];
-    var focusedEntities_ = [];
-    var cursorPosition_ = {};
-    var cameraPosition_ = {};
-    var cameraProjection_ = {};
+    var ctx_ = this,
+        data_ = {
+          animations: {},
+          images: {},
+          layers: {},
+          entities: {}
+        },
+        selectedLayers_ = [],
+        focusedEntities_ = [],
+        cursorPosition_ = {},
+        cameraPosition_ = {},
+        cameraProjection_ = {};
 
     // Public members.
     this.parent = document.createElement('div');
@@ -188,7 +188,7 @@
      * @return [meta::Context]
      */
     this.createEntity = function(tags, params) {
-      this.addEntity(addEntity(tags, new meta::Entity(params)));
+      this.addEntity(addEntity(tags, new meta.Entity(params)));
       return ctx_;
     };
 
@@ -925,7 +925,7 @@
    * @return [meta::Context]
    */
   Context.prototype.resize = function(params) {
-    if (meta.undef(params)
+    if (meta.undef(params) ||
         meta.undef(params.w) ||
         meta.undef(params.h))
       throw new meta.exception.
@@ -941,7 +941,6 @@
     return this;
   };
 
-  meta.Context = Context;
+  meta.mixSafely(meta, {Context: Context});
 
 }).call(this);
-

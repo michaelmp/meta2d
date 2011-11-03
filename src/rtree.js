@@ -199,7 +199,6 @@
     return false;
   };
 
-  meta.RTree = RTree;
+  meta.mixSafely(meta, {RTree: RTree});
 
 }).call(this);
-

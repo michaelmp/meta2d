@@ -1,6 +1,3 @@
-// provides:
-//  meta2d.Animation -- class
-//  meta2d.animation -- namespace
 (function() {
   'use strict';
   var root = this;
@@ -78,7 +75,6 @@
     };
   };
 
-  meta.Animation = Animation;
+  meta.mixSafely(meta, {Animation: Animation});
 
 }).call(this);
-

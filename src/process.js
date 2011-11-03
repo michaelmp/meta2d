@@ -1,22 +1,18 @@
-// provides:
-//  meta2d.process -- namespace
 (function() {
   'use strict';
   var root = this;
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
-  var process = meta.process = meta.redeclare(meta.process);
-
-  // @context Surface
-  process.FULL_RENDER = function() {
+  // #[meta2d::Context]
+  var render = function() {
     this.clearAll();
     this.accumulate();
     this.render();
   };
 
-  process.cameraLock = function(tag) {
-    // @context Surface
+  var lock = function(tag) {
+    // #[meta2d::Context]
     return function() {
       var obj = this.get(tag).getItems()[0];
       if (!obj) return;
@@ -24,8 +20,8 @@
     };
   };
 
-  process.cameraChase = function(tag, tension) {
-    // @context Surface
+  var chase = function(tag, tension) {
+    // #[meta2d::Context]
     return function() {
       var obj = this.get(tag).getItems()[0];
       if (!obj) return;
@@ -35,5 +31,10 @@
     };
   };
 
-}).call(this);
+  meta.process = meta.declareSafely(meta.process, {
+    FULL_RENDER: render,
+    cameraLock: lock,
+    cameraChase: chase
+  });
 
+}).call(this);

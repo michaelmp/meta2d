@@ -1,12 +1,8 @@
-// provides:
-//  meta2d.Collision -- class
-//  meta2d.collision -- namespace
 (function() {
   'use strict';
   var root = this;
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
-  var collision = meta.collision = meta.redeclare(meta.collision);
 
   /**
    * @abstract
@@ -18,27 +14,23 @@
   Collision.prototype.collides = function(surface, obj1, obj2) {
     throw 'Unimplemented collision.';
   };
-  meta.Collision = meta.redeclare(meta.Collision, Collision);
 
-  //
+  meta.mixSafely(meta, {Collision: Collision});
+
   var Everywhere = function() {};
   Everywhere.prototype = new Collision();
   // @override
   Everywhere.prototype.collides = function() {
     return true;
   };
-  collision.EVERYWHERE = new Everywhere();
 
-  //
   var Nowhere = function() {};
   Nowhere.prototype = new Collision();
   // @override
   Nowhere.prototype.collides = function() {
     return false;
   };
-  collision.NOWHERE = new Nowhere();
 
-  //
   var BBox = function() {};
   BBox.prototype = new Collision();
   // @override
@@ -57,9 +49,7 @@
     if ((r2.y + r2.h) < r1.y) return false;
     return true;
   };
-  collision.BBOX = new BBox();
 
-  //
   var Alpha = function() {};
   Alpha.prototype = new Collision();
   // @override
@@ -109,10 +99,8 @@
     var pixel = image.getPixel(col, row);
     return pixel.a > 0;
   };
-  collision.ALPHA = new Alpha();
 
-  //
-  collision.dynamicAlpha = function(frame) {
+  var dynamicAlpha = function(frame) {
     var o = function() {};
     o.prototype = new Collision();
     // @override
@@ -122,5 +110,12 @@
     return new o();
   };
 
-}).call(this);
+  meta.collision = meta.declareSafely(meta.collision, {
+    EVERYWHERE: new Everywhere(),
+    NOWHERE: new Nowhere(),
+    BBOX: new BBox(),
+    ALPHA: new Alpha(),
+    dynamicAlpha: dynamicAlpha
+  });
 
+}).call(this);

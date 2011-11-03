@@ -2,7 +2,7 @@
  * meta2d.js
  *  Copyright (c) 2011 Michael Morris-Pearce
  * 
- * version: 0.0
+ * version: 0.epsilon
  *
  * An enhanced implementation of the CanvasRenderingContext2D specification as
  * specified by W3C:
@@ -10,93 +10,91 @@
  *
  * For more information, up-to-date source, examples, and documentation:
  * @see https://gitorious.org/meta2d/
+ *
+ * Acknowledgements:
+ * Many of the ideas and styles used were inspired by the work of others:
+ * - prototype.js
+ * - underscore.js
+ * - ...
  *                                                                            80
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80 */
+/** jslint vars: true, white: true, indent: 2, maxlen: 80, human: true */
 
 (function () {
   'use strict';
 
-  // The global context (usually 'window' in a web client).
+  // The global context (usually the root window in a web client).
   var root = this;
 
-  // Safely create or reuse a namespace.
-  var redeclare = function(o, init) {return o || init || {}};
-
-  // Create or reuse namespace, along with a short-hand name.
-  var meta = root.meta2d = redeclare(root.meta2d);
-
-  // The version of this code.
-  meta.VERSION = '0.0';
-
-  // Exceptions Used
-  meta.exception = redeclare(meta.exception);
-
-  var printX = function() {
-    return this.name + ': ' + this.message;
+  // Promiscuously mix in properties.
+  var mix = function(host, vector) {
+    if (!vector) return host;
+    for (a in vector) host[a] = vector[a];
+    return host;
   };
 
-  var paramX = function(name, value) {
-    this.message = name + ':' + value;
-    this.name = 'InvalidParameterException';
+  // Only mix in original properties.
+  var safe_mix = function(host, vector) {
+    if (!vector) return host;
+    for (var a in vector)
+      if (! (a in host)) host[a] = vector[a];
+    return host;
   };
-  paramX.prototype.toString = printX;
-  meta.exception.InvalidParameterException = paramX;
 
-  var unimplementedX = function(name) {
-    this.message = name;
-    this.name = 'UnimplementedMethodException';
+  // Create a new object/namespace or mix-in with what's already present.
+  var declare = function(o, init) {
+    return (o && safe_mix(o, init)) || init || {};
   };
-  unimplementedX.prototype.toString = printX;
-  meta.exception.UnimplementedMethodException = unimplementedX;
 
-  var dependencyX = function(name) {
-    this.message = name;
-    this.name = 'UnsatisfiedDependencyException';
-  };
-  dependencyX.prototype.toString = printX;
-  meta.exception.UnsatisfiedDependencyException = dependencyX;
+  var meta = root.meta2d = declare(root.meta2d, {VERSION: '0.epsilon'});
 
-  // Basic utilities.
-  meta.undef = function(o) {return typeof o === 'undefined'};
-  meta.def = function(o) {return !meta.undef(o)};
-  meta.isString = function(o) {return typeof o === 'string'};
-  meta.isObject = function(o) {return typeof obj === 'object'};
-  meta.isNumber = function(o) {return typeof obj === 'number'};
-  meta.isFunction = function(o) {return typeof obj === 'function'};
-  meta.inherits = function(o, parent) {
-    throw new meta.exception.
-      UnimplementedMethodException('inherits');
-  };
-  meta.redeclare = redeclare;
-
-  // External functionality.
-  var V = Vector.create || $V;
-  if (!V)
-    throw new meta.exception.
-      UnsatisfiedDependencyException('sylvester');
-  meta.V = V;
-
-  // Cache bitcodes.
-  meta.cache = redeclare(meta.cache, {
-    IGNORE: 0,
-    USE: 1 << 0,
-    DIRTY: 1 << 1
-  });
+  // Some basic utilities.
+  var undef = function(o) {return typeof o === 'undefined'},
+      def = function(o) {return !meta.undef(o)},
+      is_string = function(o) {return typeof o === 'string'},
+      is_object = function(o) {return typeof o === 'object'},
+      is_number = function(o) {return typeof o === 'number'},
+      is_function = function(o) {return typeof o === 'function'},
+      inherits = function(o, parent) {return o instanceof parent;};
 
   // Modifiable Types
-  meta.CollisionType = meta.redeclare(
-    meta.CollisionType,
-    function() {}
-    );
-  meta.ProjectionType = meta.redeclare(
-    meta.ProjectionType,
-    function() {}
-    );
-  meta.TweenType = meta.redeclare(
-    meta.TweenType,
-    function() {}
-    );
+  var CollisionType = function() {},
+      ProjectionType = function() {},
+      TweenType = function() {};
+
+  safe_mix(meta, {
+    def: def,
+    undef: undef,
+    declareSafely: declare,
+    mix: mix,
+    mixSafely: safe_mix,
+    isString: is_string,
+    isObject: is_object,
+    isNumber: is_number,
+    isFunction: is_function,
+    inherits: inherits,
+    CollisionType: CollisionType,
+    ProjectionType: ProjectionType,
+    TweenType: TweenType
+  });
+
+  // Create a new kind of exception.
+  var makeX = function(name) {
+    var x = function() {
+      this.message = arguments.join(':');
+      this.name = name;
+    };
+    x.prototype.toString = function() {
+      return this.name + ' - ' + this.message;
+    };
+    return x;
+  };
+
+  // Exceptions used in this library.
+  meta.exception = meta.declareSafely(meta.exception, {
+    InvalidParameterException: makeX('InvalidParameterException'),
+    InvokedAbstractMethodException: makeX('InvokedAbstractMethodException'),
+    InvalidTemplateException: makeX('InvalidTemplateException')
+  });
 
 }).call(this);
-

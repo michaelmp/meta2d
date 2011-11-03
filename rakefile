@@ -14,7 +14,7 @@ directory "jsmin/bin"
 # Order matters: most source files are dependent on meta2d.js and modifier.js.
 sourcefiles = [ 
   "src/meta2d.js",
-  "src/modifier.js",
+  "src/modify.js",
   "src/animation.js",
   "src/collision.js",
   "src/context.js",

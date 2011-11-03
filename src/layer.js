@@ -478,7 +478,9 @@
     return rect;
   };
 
-  meta.Layer = Layer;
+  meta.mixSafely(meta, {
+    Layer: Layer,
+    round: round
+  });
 
 }).call(this);
-

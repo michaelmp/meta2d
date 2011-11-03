@@ -152,7 +152,6 @@
     return this;
   };
 
-  meta.Selector = Selector;
+  meta.mixSafely(meta, {Selector: Selector});
 
 }).call(this);
-

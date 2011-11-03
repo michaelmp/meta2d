@@ -64,7 +64,7 @@
     this.img.src = this.src;
   };
 
-  meta.Image = Image;
+  meta.mixSafely(meta, {Image: Image});
 
 }).call(this);
 

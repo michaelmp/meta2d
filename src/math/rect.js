@@ -4,7 +4,14 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace';
 
-  var math = meta.math = meta.redefine(meta.math, {});
+  var tblr = function(rect) {
+    return {
+      t: rect.y,
+      b: rect.y + rect.h,
+      l: rect.x,
+      r: rect.x + rect.w
+    };
+  };
 
   // @constructor
   // @param (x, y, w ,h) | [{x, y, w, h}]
@@ -24,18 +31,24 @@
 
   // @return [null | meta::math::Rect]
   Rect.prototype.intersect = function(r) {
-    var x = Math.max(r.x, this.x),
-        y = Math.max(r.y, this.y),
-        w = (r.x > this.x) ?
-            (this.w - r.x + this.x) :
-            (r.w - this.x + r.x),
-        h = (r.y > this.y) ?
-            (this.h - r.y + this.y) :
-            (r.h - this.y + r.y);
+    var tblr1 = tblr(this),
+        tblr2 = tblr(r),
+        t = Math.max(tblr1.t, tblr2.t),
+        b = Math.min(tblr1.b, tblr2.b),
+        l = Math.max(tblr1.l, tblr2.l),
+        r = Math.min(tblr1.r, tblr2.r);
 
-    if (w <= 0 || h <= 0) return null;
+    if (b < t || r < l) return null;
+    if (t === b) {
+      if (t === tblr1.t && t >= tblr2.b) return null;
+      if (t === tblr2.t && t >= tblr1.b) return null;
+    }
+    if (l === r) {
+      if (l === tblr1.l && l >= tblr2.r) return null;
+      if (l === tblr2.l && l >= tblr1.r) return null;
+    }
 
-    return new Rect(x, y, w, h);
+    return new Rect(l, t, r - l, b - t);
   };
 
   // @return [Boolean]
@@ -64,7 +77,6 @@
     return this.w * this.h;
   };
 
-  math.Rect = Rect;
+  var math = meta.math = meta.declareSafely(meta.math, {Rect: Rect});
 
 }).call(this);
-

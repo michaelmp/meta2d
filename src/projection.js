@@ -1,28 +1,28 @@
-// provides:
-//  meta2d.Projection -- abstract base class
-//  meta2d.projection -- namespace
 (function() {
   'use strict';
   var root = this;
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
-  var projection = meta.projection = meta.redeclare(meta.projection);
 
   /**
-   * @abstract
    * @class Projection
    */
   var Projection = function() {
     meta.Modifiable.call(this, new meta.ProjectionType());
   };
+
+  // @abstract
   Projection.prototype.forward = function() {
-    throw 'Unimplemented projection.';
-  };
-  Projection.prototype.reverse = function() {
-    throw 'Unimplemented projection.';
+    throw new meta.exception.InvokedAbstractMethodException();
   };
 
-  //
+  // @abstract
+  Projection.prototype.reverse = function() {
+    throw new meta.exception.InvokedAbstractMethodException();
+  };
+
+  meta.mixSafely(meta, {Projection: Projection});
+
   var Flat = function() {};
   Flat.prototype = new Projection();
   Flat.prototype.forward = function(pos) {
@@ -31,10 +31,8 @@
   Flat.prototype.reverse = function(pos) {
     return pos;
   };
-  projection.FLAT = new Flat();
 
-  //
-  projection.axonometric = function(params) {
+  var axonometric = function(params) {
     var o = function() {};
     o.prototype = new Projection();
     o.prototype.forward = function(pos) {
@@ -62,5 +60,30 @@
     return new o();
   };
 
-}).call(this);
+  meta.projection = meta.declareSafely(meta.projection, {
+    FLAT: new Flat(),
+    axonometric: axonometric
+  });
 
+  // [Modifier<ProjectionType>]
+  var Center = function() {
+    meta.Modifier.call(this, meta.ProjectionType);
+
+    this.modify = function(projection) {
+      projection.forward = this.wrap(projection.forward);
+      projection.reverse = this.wrap(projection.reverse);
+    };
+  };
+  Center.prototype.wrap = function(f) {
+    // #context Surface
+    return function() {
+      var pos = f.apply(this, arguments);
+      return pos.add(meta.V([this.params.w * 0.5, this.params.h * 0.5]));
+    }
+  };
+
+  meta.modifier = meta.declareSafely(meta.modifier, {
+    CENTER: new Center()
+  });
+
+}).call(this);

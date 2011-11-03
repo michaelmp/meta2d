@@ -71,7 +71,6 @@
     };
   };
 
-  meta.RCache = RCache;
+  meta.mixSafely(meta, {RCache: RCache});
 
 }).call(this);
-
