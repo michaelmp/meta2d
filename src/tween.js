@@ -169,7 +169,7 @@
   };
 
   // @return [meta2d::Modifier<meta2d.TweenType>]
-  var offset = function(val) {
+  var offset = function(attr, val) {
     var o = function() {
       meta.Modifier.call(this, meta.TweenType);
       this.modify = function(tween) {
@@ -182,16 +182,20 @@
       return function() {
         var fixed = f.apply(this, arguments);
         return function(t) {
-          return fixed(t) + val;
+          var frame = fixed(t);
+
+          frame[attr] += val;
+
+          return frame;
         };
-      }
+      };
     };
 
     return new o();
   };
 
   // @return [meta2d::Modifier<meta2d.TweenType>]
-  var scale = function(val) {
+  var scale = function(attr, val) {
     var o = function() {
       meta.Modifier.call(this, meta.TweenType);
       this.modify = function(tween) {
@@ -204,16 +208,20 @@
       return function() {
         var fixed = f.apply(this, arguments);
         return function(t) {
-          return fixed(t) * val;
+          var frame = fixed(t);
+
+          frame[attr] *= val;
+
+          return frame;
         };
-      }
+      };
     };
 
     return new o();
   };
 
   // @return [meta2d::Modifier<meta2d.TweenType>]
-  var limit = function(lower, upper) {
+  var limit = function(attr, lower, upper) {
     if (upper < lower) throw new meta.exception.InvalidParameterException();
     var o = function() {
       meta.Modifier.call(this, meta.TweenType);
@@ -227,14 +235,14 @@
       return function() {
         var fixed = f.apply(this, arguments);
         return function(t) {
-          var val = fixed(t);
+          var frame = fixed(t);
 
-          if (meta.def(lower)) val = Math.max(lower, val);
-          if (meta.def(upper)) val = Math.min(upper, val);
+          if (meta.def(lower)) frame[attr] = Math.max(lower, frame[attr]);
+          if (meta.def(upper)) frame[attr] = Math.min(upper, frame[attr]);
 
-          return val;
+          return frame;
         };
-      }
+      };
     };
 
     return new o();
@@ -255,10 +263,7 @@
     reverse: reverse,
     offset: offset,
     scale: scale,
-    limit: limit,
-    quantize: quantize,
-    envelope: envelope,
-    cycle: cycle
+    limit: limit
   });
 
 }).call(this);

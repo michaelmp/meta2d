@@ -10,16 +10,9 @@
  *
  * For more information, up-to-date source, examples, and documentation:
  * @see https://gitorious.org/meta2d/
- *
- * Acknowledgements:
- * Many of the ideas and styles used were inspired by the work of others:
- * - prototype.js
- * - underscore.js
- * - ...
  *                                                                            80
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, human: true */
-
+/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 (function () {
   'use strict';
 
@@ -51,11 +44,54 @@
   // Some basic utilities.
   var undef = function(o) {return typeof o === 'undefined'},
       def = function(o) {return !meta.undef(o)},
-      is_string = function(o) {return typeof o === 'string'},
-      is_object = function(o) {return typeof o === 'object'},
-      is_number = function(o) {return typeof o === 'number'},
       is_function = function(o) {return typeof o === 'function'},
+      is_null = function(o) {
+        return (typeof o === 'object' && !o)
+        /* || (typeof o ==='null') potential Ecmascript 5.1 */;
+      },
+      is_number = function(o) {return typeof o === 'number'},
+      is_object = function(o) {return typeof o === 'object'},
+      is_string = function(o) {return typeof o === 'string'},
       inherits = function(o, parent) {return o instanceof parent;};
+
+  // Some less-basic utilities.
+
+  /** Length of an array */
+  var len = function(ary) {
+    return ary.length;
+  };
+
+  /** Make an honest array out of argument object */
+  var args = function(argument_object) {
+    return Array.prototype.slice.call(argument_object, 0);
+  };
+
+  /** Maximum value */
+  var max = function() {
+    return args(arguments).reduce(function(a, b) {return (a > b) ? a : b;});
+  };
+
+  /** Minimum value */
+  var min = function() {
+    return args(arguments).reduce(function(a, b) {return (a > b) ? b : a;});
+  };
+
+  /** Get index in array or null (undefined may be undesirable) */
+  var index = function(i, array) {
+    if (i >= array.length || i < 0) return null;
+    return array[i];
+  };
+
+  /** Line up 2 arrays and perform a function on elements pairwise */
+  var zip = function(f, a1, a2) {
+    var ret = new Array(Math.max(a1.length, a2.length));
+
+    for (var i = 0; i < ret.length; i++) {
+      ret[i] = f.call(void 0, index(i, a1), index(i, a2));
+    }
+
+    return ret;
+  };
 
   // Modifiable Types
   var CollisionType = function() {},
@@ -68,11 +104,18 @@
     declareSafely: declare,
     mix: mix,
     mixSafely: safe_mix,
-    isString: is_string,
-    isObject: is_object,
-    isNumber: is_number,
     isFunction: is_function,
+    isNumber: is_number,
+    isNull: is_null,
+    isObject: is_object,
+    isString: is_string,
     inherits: inherits,
+    len: len,
+    args: args,
+    max: max,
+    min: min,
+    idx: index,
+    zip: zip,
     CollisionType: CollisionType,
     ProjectionType: ProjectionType,
     TweenType: TweenType
@@ -81,7 +124,7 @@
   // Create a new kind of exception.
   var makeX = function(name) {
     var x = function() {
-      this.message = arguments.join(':');
+      this.message = args(arguments).join(':');
       this.name = name;
     };
     x.prototype.toString = function() {

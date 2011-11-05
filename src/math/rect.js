@@ -77,6 +77,6 @@
     return this.w * this.h;
   };
 
-  var math = meta.math = meta.declareSafely(meta.math, {Rect: Rect});
+  meta.math = meta.declareSafely(meta.math, {Rect: Rect});
 
 }).call(this);

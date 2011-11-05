@@ -16,7 +16,7 @@
 
   this.printheader = function(msg) {
     this.println('');
-    this.print('<h1>' + msg + '</h1>');
+    this.print('<hr/><h1>' + msg + '</h1>');
   };
 
   this.printsection = function(msg) {
