@@ -4,9 +4,11 @@
  * 
  * version: 0.epsilon
  *
- * An enhanced implementation of the CanvasRenderingContext2D specification as
- * specified by W3C:
+ * An enhanced implementation of the CanvasRenderingContext2D as specified by
+ * the World Wide Web Consortium in HTML5.
  * @see http://dev.w3.org/html5/2dcontext/
+ *
+ * Features include: layers, mouse interaction, animation, cacheing, and more!
  *
  * For more information, up-to-date source, examples, and documentation:
  * @see https://gitorious.org/meta2d/

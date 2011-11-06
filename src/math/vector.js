@@ -81,6 +81,11 @@
     return meta.args(arguments).reduce(meta.zip.bind(void 0, multiplier));
   };
 
+  /** reciprocal each element in a vector */
+  var invert = function(v) {
+    return v.map(function(e) {return 1/e;});
+  };
+
   meta.math = meta.declareSafely(meta.math, {
     Vector: Vector});
   meta.math.vector = meta.declareSafely(meta.math.vector, {
@@ -88,7 +93,8 @@
     plus: plus,
     minus: minus,
     scale: scale,
-    mult: mult
+    mult: mult,
+    invert: invert
   });
 
 }).call(this);

@@ -23,13 +23,13 @@
 
   // @abstract
   // @method forward
-  Projection.prototype.forward = function() {
+  Projection.prototype.forward = function(v) {
     throw new meta.exception.InvokedAbstractMethodException();
   };
 
   // @abstract
   // @method reverse
-  Projection.prototype.reverse = function() {
+  Projection.prototype.reverse = function(v) {
     throw new meta.exception.InvokedAbstractMethodException();
   };
 
@@ -52,7 +52,7 @@
     o.prototype.forward = function(v) {
       return [
         (v[0] - v[1]) * 0.5 * w,
-        (v[1] - v[0]) * 0.5 * h
+        (v[1] + v[0]) * 0.5 * h
       ];
     };
     o.prototype.reverse = function(v) {
@@ -66,52 +66,64 @@
     return new o();
   };
 
-  // @return [meta2d::Projection]
-  var iso_from_3d = function(w, h, d) {
-    if (!w || !h || !d) throw new meta.exception.InvalidParameterException();
-    var o = function() {};
-
-    o.prototype = new Projection();
-    o.prototype.forward = function(v) {
-      return [
-        (v[0] - v[2]) * 0.5 * w,
-        (v[2] - v[0]) * 0.5 * d + (v[1] * h)
-      ];
+  // @return [meta2d::Modifier<meta2d.ProjectionType>]
+  var shift = function(v_shift) {
+    var o = function() {
+      meta.Modifier.call(this, meta.ProjectionType);
+      this.modify = function(projection) {
+        projection.forward = this.wrapForward(projection.forward);
+        projection.reverse = this.wrapReverse(projection.reverse);
+      };
     };
-    o.prototye.reverse = function(v) {
-      return null; // underdetermined
+
+    o.prototype.wrapForward = function(f) {
+      return function(v) {
+        return meta.math.vector.plus(f.call(this, v), v_shift);
+      };
+    };
+    o.prototype.wrapReverse = function(f) {
+      return function(v) {
+        return f.call(this, meta.math.vector.minus(v, v_shift));
+      };
     };
 
     return new o();
   };
 
-  // [Modifier<ProjectionType>]
-  var Center = function() {
-    meta.Modifier.call(this, meta.ProjectionType);
-
-    this.modify = function(projection) {
-      projection.forward = this.wrap(projection.forward);
-      projection.reverse = this.wrap(projection.reverse);
+  // @return [meta2d::Modifier<meta2d.ProjectionType>]
+  var scale = function(v_scale) {
+    var o = function() {
+      meta.Modifier.call(this, meta.ProjectionType);
+      this.modify = function(projection) {
+        projection.forward = this.wrapForward(projection.forward);
+        projection.reverse = this.wrapReverse(projection.reverse);
+      };
     };
-  };
-  Center.prototype.wrap = function(f) {
-    // #context Surface
-    return function() {
-      var v = f.apply(this, arguments);
-      return v.add([this.params.w * 0.5, this.params.h * 0.5]);
-    }
+
+    o.prototype.wrapForward = function(f) {
+      return function(v) {
+        return meta.math.vector.mult(f.call(this, v), v_scale);
+      };
+    };
+    o.prototype.wrapReverse = function(f) {
+      return function(v) {
+        return f.call(this, meta.math.vector.mult(
+              v, meta.math.vector.invert(v_scale)));
+      };
+    };
+
+    return new o();
   };
 
-  meta.modifier = meta.declareSafely(meta.modifier, {
-    CENTER: new Center()
+  meta.mixSafely(meta, {
+    Projection: Projection
   });
-
-  meta.mixSafely(meta, {Projection: Projection});
 
   meta.projection = meta.declareSafely(meta.projection, {
     FLAT: new Flat(),
     iso2d: iso_from_2d,
-    iso3d: iso_from_3d
+    shift: shift,
+    scale: scale
   });
 
 }).call(this);
