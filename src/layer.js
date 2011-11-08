@@ -52,19 +52,28 @@
    * @class Layer
    * 
    * A context onto which graphics are drawn and objects are stored. Layers are
-   * drawn low to high z-order (higher overlaps lower).
+   * drawn low to high z-order (higher overlaps lower) inside a meta context.
    *
+   */
+
+  /**
    * @constructor
+   *
+   * You can make a layer like this:
+   * [code]
+   * e = document.getElementById('myElement')
+   * p = {w: 100, h: 100, z: 5}
+   * l = new meta2d.Layer(e, p)
+   * [/code]
+   *
+   * But it's easier to use a context.
+   *
    * @param [DOMElement] parent
    * @param [{w, h, parallax, z}] params
    */
   var Layer = function(parent, params) {
-    if (meta.undef(params))
-      throw new meta.exception.
-        InvalidParameterException('params', params);
-    if (meta.undef(parent))
-      throw new meta.exception.
-        InvalidParameterException('parent', parent);
+    if (meta.undef(params) || meta.undef(parent))
+      throw new meta.exception.InvalidParameterException();
 
     // Private members
     var layer_ = this,
@@ -84,7 +93,6 @@
     ctx_ = canvas_.getContext('2d');
 
     /**
-     * @privileged
      * @method render
      * @param [meta::math::Rect] rect
      * @return [meta::Layer]
@@ -112,15 +120,15 @@
               var itx = b.rect.intersect(d.rect);
               if (!itx) return;
               b.ctx.drawImage(
-                d.canvas,
-                itx.x - d.rect.x,
-                itx.y - d.rect.y,
-                itx.w,
-                itx.h,
-                itx.x - b.rect.x,
-                itx.y - b.rect.y,
-                itx.w,
-                itx.h);
+                  d.canvas,
+                  itx.x - d.rect.x,
+                  itx.y - d.rect.y,
+                  itx.w,
+                  itx.h,
+                  itx.x - b.rect.x,
+                  itx.y - b.rect.y,
+                  itx.w,
+                  itx.h);
               });
           });
 
@@ -128,7 +136,6 @@
     };
 
     /**
-     * @privileged
      * @method flip
      * @return [meta::Layer]
      */
@@ -159,7 +166,6 @@
     };
 
     /**
-     * @privileged
      * @method createDrawing
      * Copies the context state to a new context with specified output
      * geometry applied to transformation.
@@ -184,7 +190,6 @@
     };
 
     /**
-     * @privileged
      * @method clear
      * Erase pixel data onscreen and in cache without removing
      * cache.
@@ -200,7 +205,6 @@
     };
 
     /**
-     * @privileged
      * @method prune
      * Removes cache blocks inside of rect.
      * @param [meta::math::Rect] rect
@@ -215,7 +219,6 @@
     };
 
     /**
-     * @privileged
      * @method crop
      * Removes cache blocks that do not intersect with rect.
      * @param [meta::math::Rect] rect
@@ -230,7 +233,6 @@
     };
 
     /**
-     * @privileged
      * @method resize
      * @param [{w, h}] params
      * @return [meta::Layer]
@@ -242,7 +244,6 @@
     };
 
     /**
-     * @privileged
      * @method getNativeContext
      * @return [CanvasRenderingContext2D]
      */
@@ -251,11 +252,12 @@
     };
 
     /**
-     * @privileged
      * @method addEntity
-     * @param [meta::Context] ctx
-     * @param [meta::Entity] e
-     * @param [meta::math::Rect] bound [optional]
+     * Stores a new visual entity inside the layer.
+     * @param ctx
+     * @param e
+     * @param rect
+     * Optional.
      * @return [meta::Layer]
      */
     this.addEntity = function(ctx, e, bound) {
@@ -275,7 +277,6 @@
     };
 
     /**
-     * @privileged
      * @method getUnindexedEntities
      * @return [Array<meta::Entity>]
      */
@@ -284,7 +285,6 @@
     };
 
     /**
-     * @privileged
      * @method setUnindexedEntities
      * @param [Array<meta::Entity>]
      * @return [meta::Context]
@@ -298,7 +298,6 @@
     };
 
     /**
-     * @privileged
      * @method getParallax
      * @return [Number]
      */
@@ -307,7 +306,6 @@
     };
 
     /**
-     * @privileged
      * @method setParallax
      * @param [Number] value
      * @return [meta::Layer]
@@ -321,7 +319,6 @@
     };
 
     /**
-     * @privileged
      * @method getParent
      * @return [HTMLElement]
      */
@@ -330,7 +327,6 @@
     };
 
     /**
-     * @privileged
      * @method getHeight
      * @return [Number]
      */
@@ -339,7 +335,6 @@
     };
 
     /**
-     * @privileged
      * @method getWidth
      * @return [Number]
      */
@@ -348,7 +343,6 @@
     };
 
     /**
-     * @privileged
      * @method getZ
      * @return [Number]
      */
@@ -357,7 +351,6 @@
     };
 
     /**
-     * @privileged
      * @method setZ
      * @param [Number]
      * @return [meta::Layer]
@@ -373,7 +366,6 @@
     };
 
     /**
-     * @privileged
      * @method getContextAttribute
      * @param [String] name
      * @return [any | undefined]
@@ -385,7 +377,6 @@
     };
 
     /**
-     * @privileged
      * @method setContextAttribute
      * @param [String] name
      * @param [any] value
@@ -422,9 +413,12 @@
 
     /**
      * @method reindex
-     * @param [meta::Context] ctx
-     * @param [meta::math::Rect] rect
-     * @return [meta::Layer]
+     * Index any unindexed entities by their bounding logic.
+     * @param ctx
+     * A [meta2d::Context].
+     * @param rect
+     * A [meta2d::math::Rect].
+     * @return [meta2d::Context]
      */
     this.reindex = function(ctx, rect) {
       if (meta.undef(rect))

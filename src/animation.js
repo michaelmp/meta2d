@@ -35,6 +35,16 @@
       return obj_builder;
     };
 
+    /**
+     * @method putFrame
+     * @param index
+     *  A Number specifying when in time the frame is located. Only one frame
+     *  may occupy a single time.
+     * @param data
+     *  An Object containing the frame data.
+     * @return [Animation]
+     *  The calling Animation.
+     */
     this.putFrame = function(index, data) {
       if (!index || !data) return this;
       frames_[index] = data;

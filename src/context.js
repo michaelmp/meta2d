@@ -76,7 +76,6 @@
     this.params = params;
 
     /**
-     * @privileged
      * @method addAnimation
      * @param [String] name
      * @param [meta::Animation] animation
@@ -94,7 +93,6 @@
     };
 
     /**
-     * @privileged
      * @method getAnimationByName
      * @param [String name]
      * @return [meta::Animation]
@@ -107,7 +105,6 @@
     };
 
     /**
-     * @privileged
      * @method createArray
      * @param [String|Array<String>] tags
      * @param [meta:Segment]
@@ -116,7 +113,6 @@
     };
  
     /**
-     * @privileged
      * @method getCameraPosition
      * @return [meta::math::Vector]
      */
@@ -125,7 +121,6 @@
     };
 
     /**
-     * @privileged
      * @method setCameraPosition
      * @param [meta::math::Vector] vector
      * @return [meta::Context]
@@ -139,7 +134,6 @@
     };
 
     /**
-     * @privileged
      * @method getCursorPosition
      * @return [meta::math::Vector]
      */
@@ -148,7 +142,6 @@
     };
 
     /**
-     * @privileged
      * @method setCursorPosition
      * @param [meta::math::Vector] vector
      * @return [meta::Context]
@@ -159,7 +152,6 @@
     };
 
     /**
-     * @privileged
      * @method addEntity
      * @param [String|Array<String>] tags
      * @param [meta::Entity] entity
@@ -170,7 +162,6 @@
     };
 
     /**
-     * @privileged
      * @method addEntitites
      * @param [String|Array<String>] tags
      * @param [Array<meta::Entity>] entities
@@ -181,7 +172,6 @@
     };
 
     /**
-     * @privileged
      * @method createEntity
      * @param [String|Array<String>] tags
      * @param [Object] params
@@ -193,7 +183,6 @@
     };
 
     /**
-     * @privileged
      * @method setEntityProjection
      * @param [meta::Projection] projection
      * @return [meta::Context]
@@ -203,7 +192,6 @@
     };
 
     /**
-     * @privileged
      * @method setEntityFocusMask
      * @param [meta::Collision] mask
      * @return [meta::Context]
@@ -213,7 +201,6 @@
     };
 
     /**
-     * @privileged
      * @method selectEntities
      * @param [String|Array<String>] tags
      * @return [meta::Context]
@@ -223,7 +210,6 @@
     };
 
     /**
-     * @privileged
      * @method getEntitiesByTags
      * @param [String|Array<String>] tags
      * @return [Array<meta::Entity>]
@@ -233,7 +219,6 @@
     };
 
     /**
-     * @privileged
      * @method getEntityById
      * @param [Number] id
      * @return [meta::Entity]
@@ -243,7 +228,6 @@
     };
 
     /**
-     * @privileged
      * @method removeSelectedEntities
      * @return [meta::Context]
      */
@@ -252,7 +236,6 @@
     };
 
     /**
-     * @privileged
      * @method getEntitySelectionTags
      * @return String
      */
@@ -261,7 +244,6 @@
     };
 
     /**
-     * @privileged
      * @method addEntityEventListener
      * @param [String] type
      * @param [Function(meta::Event)] callback)
@@ -272,7 +254,6 @@
     };
 
     /**
-     * @privileged
      * @method dispatchEvent
      * @param [meta::Event] event
      * @return [meta::Context]
@@ -282,7 +263,6 @@
     };
 
     /**
-     * @privileged
      * @method getFocusedEntities
      * @return [Array<meta::Entity>]
      */
@@ -291,7 +271,6 @@
     };
 
     /**
-     * @privileged
      * @method setFocusedEntities
      * @param [Array<meta::Entity>] entities
      * @return [meta::Context]
@@ -304,7 +283,6 @@
     };
 
     /**
-     * @privileged
      * @method addImage
      * @param [String] name
      * @param [meta::Image] image
@@ -322,7 +300,6 @@
     };
 
     /**
-     * @privileged
      * @method getImageByName
      * @param [String name]
      * @return [meta::Image]
@@ -335,7 +312,6 @@
     };
 
     /**
-     * @privileged
      * @method addLayer
      * @param [String] name
      * @param [meta::Layer] layer
@@ -346,7 +322,6 @@
     };
 
     /**
-     * @privileged
      * @method createLayer
      * @param [String] name
      * @return [meta::Context]
@@ -357,7 +332,6 @@
     };
 
     /**
-     * @privileged
      * @method selectLayer
      * @param [String] name
      * @return [meta::Context]
@@ -370,7 +344,6 @@
     };
 
     /**
-     * @privileged
      * @method getLayerByName
      * @param [String] name
      * @return [meta::Layer]
@@ -380,7 +353,6 @@
     };
 
     /**
-     * @privileged
      * @method renameLayer
      * @param [String] name
      * @param [String] newName
@@ -391,7 +363,6 @@
     };
 
     /**
-     * @privileged
      * @method removeLayers
      * @param [String|Array<String>] names
      * @return [meta::Context]
@@ -401,7 +372,6 @@
     };
 
     /**
-     * @privileged
      * @method removeSelectedLayers
      * @return [meta::Context]
      */
@@ -410,7 +380,6 @@
     };
 
     /**
-     * @privileged
      * @method getLayerSelectionName
      * @return String
      */
@@ -641,69 +610,7 @@
     this.getLayerByName(this.getActiveLayerName()).draw(this, list);
     return this;
   };
-  
-  /**
-   * put several objects into the active layer, indexing over an arbitrary number
-   * of dimensions.
-   * @return Selector
-   */
-  /**
-  Context.prototype.array = function(tag) {
-    var dimensions = arguments.length - 1;
-    var ids = $A([tag]);
-    var ctx = this;
-    for (var d = 1; d < dimensions + 1; ++d) {
-      ids = build_ids(ids, arguments[d]);
-    }
-    ids.forEach(function(id){
-        var stringdims = id.split('.').splice(1, dimensions);
-        var numdims = stringdims.map(function(s){
-          return parseInt(s);
-          });
-        var data = {
-          index: numdims,
-          pos: meta.V(numdims)
-        };
-        ctx.put(tag + ' ' + id, data);
-    });
-    return this.select(tag);
-  };
-  */
-
-  /**
-   * put a new object identified by a set of tags into the active layer with
-   * associated data (optional).
-   *
-   * @param tags -- {String} | {Array}
-   * @param data -- {...}
-   * @param bound -- [optional] bounding box for spatial indexing.
-   * @return Selector
-   */
-  /**
-  Context.prototype.put = function(tags, data, bound) {
-    if (meta.isString(tags)) tags = tags.split(' ');
-
-    var o = {
-      id: OBJECT_COUNT++,
-      data: data,
-      tags: tags,
-      select: function() {
-        return new meta.Selector($A([this]));
-      }
-    };
-    if (!data) o.data = {};
-    o.data.layer = o.data.layer || this.getActiveLayerName();
-
-    // have layer keep track of object
-    this.getLayerByName(o.data.layer).put(this, o, bound);
-
-    // map each tag to this object
-    this.tagObject(tags, o);
-
-    return this.select(tags);
-  };
-  */
-
+ 
   /**
    * @method render
    * @param [meta::math::Rect] rect
@@ -798,22 +705,6 @@
   };
 
   /**
-  Context.prototype.applyCameraToPosition = function(pos) {
-    if (!(this.getCamera() || this.getCameraProjection())) return pos;
-    var layer = this.getLayerByName(this.getActiveLayerName());
-    var cam = this.getCameraProjection().forward.call(this, this.getCamera());
-    var offset = {
-      x: pos.e(1) * layer.parallax.e(1),
-      y: pos.e(2) * layer.parallax.e(2)
-    };
-    return {
-      x: pos.x - offset.x,
-      y: pos.y - offset.y
-    };
-  };
-  */
-
-  /**
    * @method flipAllLayers
    * Push each layer's buffered pixel data to the screen.
    * @return [meta::Context]
@@ -826,7 +717,7 @@
   };
 
   /**
-   * @return current runtime in milliseconds.
+   * current runtime in milliseconds.
    * TODO: migrate
    */
   Context.prototype.time = (function() {
@@ -837,7 +728,7 @@
       })();
 
   /**
-   * @return random float in the interval [0,1).
+   * random float in the interval [0,1).
    * TODO: migrate
    */
   Context.prototype.rand = function() {
@@ -845,7 +736,7 @@
   };
 
   /**
-   * @return random integer in the given inclusive interval.
+   * random integer in the given inclusive interval.
    * TODO: migrate
    */
   Context.prototype.randint = function(low, high) {
@@ -855,7 +746,6 @@
   /**
    * set or retrieve a recurring function.
    *
-   * @return a process controller | null
    * TODO: improve stability/accuracy
    */
   Context.prototype.process = function(name, params) {
