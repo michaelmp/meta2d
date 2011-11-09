@@ -27,43 +27,47 @@
    *  Optional. If true, do not begin downloading the image until load() is
    *  called.
    *
-   * @param onready
-   *  Optional. A callback for when the image has been successfully loaded.
+   * @param onload
+   *  Optional. A callback for when the image has been successfully loaded and
+   *  the pixel data have been read.
+   *
+   * @param onerror
+   *  Optional. A callback for when something goes wrong loading the image.
    */
-  var Image = function(src, wait, onready) {
+  var Image = function(src, wait, onload, onerror) {
     if (!src) throw new meta.exception.InvalidParameterException();
     var img_ = this,
         src_ = src,
         pixels_ = [],
         w_,
         h_,
-        dummy_ = document.createElement('img');
+        dummy_ = document.createElement('img'),
+        canvas_,
+        context_;
+
+    // Set the error callback.
+    dummy_.onerror = onerror;
 
     // Set the callback for when the image is finished downloading.
     dummy_.onload = function() {
-      var canvas = document.createElement('canvas'),
-          context,
-          idata,
-          i;
+      var idata, i;
+      canvas_ = document.createElement('canvas');
 
       // Set some properties now that the image has been fetched.
-      canvas.width = w_ = dummy_.width;
-      canvas.height = h_ = dummy_.height;
-      context = canvas.getContext('2d');
+      canvas_.width = w_ = dummy_.width;
+      canvas_.height = h_ = dummy_.height;
+      context_ = canvas_.getContext('2d');
 
       // Copy the image into our canvas.
-      context.drawImage(dummy_, 0, 0);
+      context_.drawImage(dummy_, 0, 0);
 
       // Access the pixel data via the context.
-      idata = context.getImageData(0, 0, w_, h_);
+      idata = context_.getImageData(0, 0, w_, h_);
 
       i = idata.data.length;
+      while (i--) pixels_[i] = idata.data[i];
 
-      while (i--) {
-        pixels_[i] = idata.data[i];
-      }
-
-      if (meta.def(onready)) onready.call(img_);
+      if (meta.def(onload)) onload.call(img_);
     };
 
     /**
@@ -79,9 +83,6 @@
       return this;
     };
 
-    // Do start the download unless instructed otherwise.
-    if (!wait) this.load();
-
     /**
      * @method getHTMLImage
      *
@@ -91,6 +92,15 @@
       return dummy_;
     };
 
+    /**
+     * @method getCanvas
+     *
+     * @return [HTMLCanvas]
+     */
+    this.getCanvas = function() {
+      return canvas_;
+    };
+    
     /**
      * @method getWidth
      *
@@ -131,6 +141,9 @@
         pixels_[idx+3]
       ];
     };
+
+    // Do start the download unless instructed otherwise.
+    if (!wait) this.load();
 
   };
 

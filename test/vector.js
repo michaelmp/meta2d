@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::math::vector');
 
@@ -49,4 +50,4 @@
 
   summarize();
 
-}).call(this);
+}).bind(this));

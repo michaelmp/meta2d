@@ -11,16 +11,16 @@
   };
 
   this.println = function(msg) {
-    this.print(msg + '<br />');
+    root.print(msg + '<br />');
   };
 
   this.printheader = function(msg) {
-    this.println('');
-    this.print('<hr/><h1>' + msg + '</h1>');
+    root.println('');
+    root.print('<hr/><h1>' + msg + '</h1>');
   };
 
   this.printsection = function(msg) {
-    this.print('<h2>' + msg + '</h2>');
+    root.print('<h2>' + msg + '</h2>');
   };
 
   this.assert = function(msg, cond) {
@@ -40,6 +40,13 @@
       '<div class="'+cls+'">' +
       passed + '</div>/' + (passed + failed) +
       ' total tests passed';
+  };
+
+  this.spin = function(sec) {
+    var start = new Date().getTime();
+    while (new Date().getTime() - start < sec * 1000) {
+      setTimeout(void 0, 0);
+    }
   };
 
 }).call(this);

@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Segment');
 
@@ -68,4 +69,4 @@
 
   summarize();
 
-})();
+}).bind(this));

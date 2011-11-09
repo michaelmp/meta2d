@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Projection');
 
@@ -96,4 +97,4 @@
 
   summarize();
 
-}).call(this);
+}).bind(this));

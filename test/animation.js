@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Animation');
 
@@ -34,4 +35,4 @@
 
   summarize();
 
-})();
+}).bind(this));

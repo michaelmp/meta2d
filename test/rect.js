@@ -1,3 +1,4 @@
+document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::math::Rect');
 
@@ -108,4 +109,4 @@
 
   summarize();
 
-})();
+}).bind(this));
