@@ -26,65 +26,129 @@
         tweens_ = [],
         data_ = {};
 
-    var apply_tweens = function(tween_array, index) {
-      var obj_builder = {};
-      for (var i = 0; i < tween_array.length; ++i) {
-        var obj = tween_array[i].tween.call(this, index);
-        if (obj) Object.extend(obj_builder, obj);
-      }
-      return obj_builder;
+    // take a base frame and apply tweens on top of it
+    var apply_tweens = function(frame, tweens, index) {
+      if (!tweens || meta.undef(index)) return frame;
+      var merged = meta.mix({}, frame);
+
+      tweens.forEach(function(t) {
+          var f = t.tween.call(this, index);
+          meta.mix(merged, f);
+          }, this);
+
+      return merged;
     };
 
     /**
      * @method putFrame
      * @param index
      *  A Number specifying when in time the frame is located. Only one frame
-     *  may occupy a single time.
+     *  may occupy a single time, although overlapping frames will merge their
+     *  properties.
      * @param data
      *  An Object containing the frame data.
      * @return [Animation]
-     *  The calling Animation.
+     *  thisArg
      */
     this.putFrame = function(index, data) {
-      if (!index || !data) return this;
-      frames_[index] = data;
-      return this;
-    },
+      if (meta.undef(index) || !data) return this;
+     
+      frames_[index] = meta.declareSafely(frames_[index], data);
 
+      return this;
+    };
+
+    /**
+     * @method getFrame
+     *  Generate a frame based on all interpolations affecting the index time.
+     * @param index
+     *  A Number specifying when in time the frame should be interpolated.
+     * @return [Object | null]
+     */
     this.getFrame = function(index) {
       if (meta.undef(index)) return null;
-      var f = frames_[index];
-      if (f) return f;
-      var intersecting_tweens = tweens.filter(function(s){
-          return s.segment.include(index);
-          });
-      return apply_tweens(intersecting_tweens, index);
-    }
+      var f = frames_[index] || {},
+          intersecting_tweens = tweens_.filter(function(t) {
+              return meta.segment.includes(t.segment, index);
+              });
 
+      return apply_tweens(f, intersecting_tweens, index);
+    };
+
+    /**
+     * @method deleteFrame
+     *  Removes a frame from the animation, without affecting any tweens
+     *  that the frame may have been a keyframe for.
+     * @param index
+     *  A Number specifying when in time the frame is indexed.
+     * @return [Animation]
+     *  thisArg
+     */
     this.deleteFrame = function(index) {
       delete frames_[index];
       return this;
     };
 
-    this.tween = function(params) {
-      if (!params.segment) params.segment = meta.segment.ALWAYS;
-      if (!params.tween) throw 'Invalid parameters.';
-      var arg = {
-        segment: params.segment,
-        startframe: frames_[params.segment.start],
-        endframe: frames_[params.segment.end]
-      };
-      var fixed = params.tween.fix.call(this, arg);
+    /**
+     * @method applyTween
+     *  Performs interpolation on a timeframe, based on specified keyframes.
+     *
+     *  In this example, the animation will have property 'a' change in value
+     *  from 0 to 1 from time 0 to 5.
+     *  <code>
+     *  anim.applyTween(slirp('a'), [0, 5], {a: 0}, {a: 1})
+     *  
+     *  // anim.getFrame(3).a === 0.6
+     *  </code>
+     * @param tween
+     *  The [Tween] to use.
+     * @param segment
+     *  Optional. A time [Segment] describing the range to apply the tween to.
+     *  This range should begin and end with keyframes in the animation if the
+     *  tween requires keyframes. If not specified, the infinite range is used.
+     * @param keyframes...
+     *  Optional. Most tweens that interpolate will require keyframe data.
+     * @return [Animation]
+     *  thisArg
+     */
+    this.applyTween = function(tween, segment) {
+      if (!segment) segment = meta.segment.ALWAYS;
+      if (!tween) throw new meta.exception.InvalidParameterException();
+      var keyframes = meta.args(arguments).slice(2),
+          fixed = tween.fix.bind(this, segment).apply(this, keyframes);
       if (!fixed) return this;
-      if (params.segment.start === params.segment.end) return this;
-      tweens.push({
-          segment: params.segment,
+      if (segment[0] === segment[1]) return this;
+
+      tweens_.push({
+          segment: segment,
           tween: fixed
           });
+
+      return this;
+    };
+
+    /**
+     * @method undoTweens
+     *  Removes any tweens in the target area from the animation.
+     * @param segment
+     *  A time [Segment] identifying all tweens that intersect.
+     * @return [Animation]
+     * thisArg
+     */
+    this.undoTweens = function(segment) {
+      if (!segment) return this;
+
+      tweens_.forEach(function(t, i, array) {
+          if (meta.segment.intersects(t.segment, segment))
+            delete array[i];
+          });
+
       return this;
     };
   };
 
-  meta.mixSafely(meta, {Animation: Animation});
+  meta.mixSafely(meta, {
+    Animation: Animation
+  });
 
 }).call(this);

@@ -24,7 +24,7 @@
   // Promiscuously mix in properties.
   var mix = function(host, vector) {
     if (!vector) return host;
-    for (a in vector) host[a] = vector[a];
+    for (var a in vector) host[a] = vector[a];
     return host;
   };
 
@@ -41,7 +41,9 @@
     return (o && safe_mix(o, init)) || init || {};
   };
 
-  var meta = root.meta2d = declare(root.meta2d, {VERSION: '0.epsilon'});
+  var meta = root.meta2d = declare(root.meta2d, {
+    VERSION: '0.epsilon'
+  });
 
   // Some basic utilities.
   var undef = function(o) {return typeof o === 'undefined'},

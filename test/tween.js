@@ -21,7 +21,7 @@
   assert('valid in time range',
       twn1.fix(seg1)(0).a === 5 &&
       twn1.fix(seg1)(3).a === 5 &&
-      twn1.fix(seg1)(10).a === 5 &&
+      twn1.fix(seg1)(10).a === undefined &&
       twn2.fix(seg1)(5).b === 'b' &&
       twn8.fix(seg1, f2, f3)(5).a === 0 &&
       typeof twn3.fix(seg1)(6).c === 'object');
@@ -37,9 +37,9 @@
   assert('correct computation',
       twn4.fix(seg1, f2, f3)(0).a === 0 &&
       twn4.fix(seg1, f2, f3)(1).a === 1 &&
-      twn4.fix(seg1, f2, f3)(10).a === 10 &&
-      twn4.fix(seg3, f1, f3)(-5).a === -10 &&
-      twn4.fix(seg3, f1, f3)(5).a === 10);
+      twn4.fix(seg1, f2, f3)(10).a === undefined &&
+      twn4.fix(seg3, f1, f3)(-2.5).a === -5 &&
+      twn4.fix(seg3, f1, f3)(2.5).a === 5);
   assert('NaN in infinite range',
       isNaN(twn4.fix(seg2, f2, f3)(100).a));
   

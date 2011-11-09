@@ -4,68 +4,67 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
+  /**
+   * @class Segment
+   *  Segment === Array of length 2.
+   */
   var Segment = function(start, end) {
-    var start_ = start,
-        end_ = end,
-        forward_;
-    if (meta.undef(start_)) start_ = Number.NEGATIVE_INFINITY;
-    if (meta.undef(end_)) end_ = Number.POSITIVE_INFINITY;
-    forward_ = (start_ <= end_);
+    if (meta.undef(start))
+      start = Number.NEGATIVE_INFINITY;
+    if (meta.undef(end))
+      end = Number.POSITIVE_INFINITY;
+    this.push(start, end);
+  };
+  Segment.prototype = new Array();
 
-    /**
-     * @privileged
-     * @method getStart
-     * @return [Number]
-     */
-    this.getStart = function() {
-      return start_;
-    };
-
-    /**
-     * @privileged
-     * @method getEnd
-     * @return [Number]
-     */
-    this.getEnd = function() {
-      return end_;
-    };
-
-    /**
-     * @privileged
-     * @method includes
-     * @param t
-     * @return [Boolean]
-     */
-    this.includes = function(t) {
-      return forward_ ?
-        t >= start_ && t <= end_ :
-        t <= start_ && t >= end_;
-    };
-
-    /**
-     * @privileged
-     * @method isForward
-     * @return [Boolean]
-     */
-    this.isForward = function() {
-      return forward_;
-    };
-
-    /**
-     * @privileged
-     * @method reverse
-     * @return [meta2d::Segment]
-     */
-    this.reverse = function() {
-      return new Segment(end_, start_);
-    };
-
+  var start = function(seg) {
+    return seg[0];
   };
 
-  meta.mixSafely(meta, {Segment: Segment});
+  var end = function(seg) {
+    return seg[1];
+  };
+
+  var is_forward = function(seg) {
+    return start(seg) <= end(seg);
+  };
+
+  var reverse = function(seg) {
+    return [seg[1], seg[0]];
+  };
+
+  // inclusive at start, exclusive at end
+  var includes = function(seg) {
+    var queries = meta.args(arguments).slice(1);
+
+    return queries.every(function(q) {
+        return is_forward(seg) ?
+          q >= start(seg) && q < end(seg) :
+          q <= start(seg) && q > end(seg);
+          });
+  };
+
+  var intersects = function(seg) {
+    var segs = meta.args(arguments).slice(1);
+
+    return segs.every(function(s) {
+        return includes(seg, start(s))
+            || includes(seg, end(s));
+        });
+  };
+
+  meta.mixSafely(meta, {
+    Segment: Segment
+  });
 
   meta.segment = meta.declareSafely(meta.segment, {
-    ALWAYS: new Segment(Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY)
+    ALWAYS: [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+    start: start,
+    end: end,
+    isForward: is_forward,
+    reverse: reverse,
+    includes: includes,
+    intersects: intersects
   });
 
 }).call(this);

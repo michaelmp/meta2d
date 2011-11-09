@@ -1,13 +1,16 @@
 (function() {
   'use strict';
   var root = this,
-    meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+      meta = root.meta2d,
+      segment = meta.segment;
 
   var no_frame = function() {return {};};
 
   /**
    * @class Tween : Modifiable<TweenType>
+   */
+
+  /**
    * @constructor
    */
   var Tween = function() {
@@ -15,8 +18,8 @@
   };
 
   /**
-   * @abstract
    * @method fix
+   * @abstract
    * @param [meta2d::Segment] seg
    * @param [Object] ...
    * @return function(Number t) --> [meta2d::Frame]
@@ -36,14 +39,14 @@
       var args = arguments;
 
       return function(t) {
-        if (!seg.includes(t)) return no_frame();
+        if (!segment.includes(seg, t)) return no_frame();
         var f = {};
 
         if (meta.def(value)) {
           f[attr] = value;
         } else {
           if (args.length < 3) return no_frame();
-          f[attr] = seg.isForward() ? f1[attr] : f2[attr];
+          f[attr] = segment.isForward(seg) ? f1[attr] : f2[attr];
         }
 
         return f;
@@ -61,11 +64,12 @@
     o.prototype.fix = function(seg, f1, f2) {
       if (arguments.length < 3) return no_frame;
       return function(t) {
-        if (!seg.includes(t)) return no_frame();
+        if (!segment.includes(seg, t)) return no_frame();
         var f = {},
             sv = f1[attr],
             ev = f2[attr],
-            p = (t - seg.getStart()) / (seg.getEnd() - seg.getStart());
+            p = (t - segment.start(seg))
+              / (segment.end(seg) - segment.start(seg));
 
         f[attr] = ((1 - p) * sv) + (p * ev);
 
