@@ -831,6 +831,8 @@
     return this;
   };
 
-  meta.mixSafely(meta, {Context: Context});
+  meta.mixSafely(meta, {
+    Context: Context
+  });
 
 }).call(this);

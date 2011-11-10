@@ -31,7 +31,11 @@ DOC_HTML = {
 DOC_HTML_TAGS = {
     '--&#62;': '&rarr;',
     '[code]': '<code>',
-    '[/code]': '</code>'
+    '[/code]': '</code>',
+    '[p]': '<p>',
+    '[/p]': '</p>',
+    '[url]': '<a href="">',
+    '[/url]': '</a>'
 }
 
 METHOD_ANNOTATIONS = ['param', 'return']
