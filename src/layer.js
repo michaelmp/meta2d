@@ -6,198 +6,150 @@
 
   var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
 
-  var round = function(val) {
-    return (0.5 + val) << 0;
-  };
-
-  /**
-   * Native context attributes that can be manipulated, minus the
-   * transformation matrix.
-   * @see http://dev.w3.org/html5/2dcontext/Overview.html
-   *   #conformance-requirements
-   */
-  var CONTEXT_ATTRIBUTES = {
-    canvas: void 0,
-    globalAlpha: void 0,
-    globalCompositeOperation: void 0,
-    strokeStyle: void 0,
-    fillStyle: void 0,
-    lineWidth: void 0,
-    lineCap: void 0,
-    lineJoin: void 0,
-    miterLimit: void 0,
-    shadowOffsetX: void 0,
-    shadowOffsetY: void 0,
-    shadowBlur: void 0,
-    shadowColor: void 0
-  };
-
-  // Read-only attributes.
-  var CONTEXT_ATTRIBUTES_RO = {
-    canvas: void 0
-  };
-
-  var apply_context_attributes = function(dctx, sctx) {
-    for (p in CONTEXT_ATTRIBUTES) {
-      if (p in CONTEXT_ATTRIBUTES_RO) continue;
-      dctx[p] = sctx[p];
-    }
-  };
-
   var identity_matrix = function(ctx) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
   /**
    * @class Layer
-   * 
-   * A context onto which graphics are drawn and objects are stored. Layers are
-   * drawn low to high z-order (higher overlaps lower) inside a meta context.
-   *
    */
 
   /**
    * @constructor
    *
-   * You can make a layer like this:
-   * [code]
-   * e = document.getElementById('myElement')
-   * p = {w: 100, h: 100, z: 5}
-   * l = new meta2d.Layer(e, p)
-   * [/code]
-   *
-   * But it's easier to use a context.
-   *
-   * @param [DOMElement] parent
-   * @param [{w, h, parallax, z}] params
+   * @param mcx
+   * @param options
    */
-  var Layer = function(parent, params) {
-    if (meta.undef(params) || meta.undef(parent))
-      throw new meta.exception.InvalidParameterException();
-
-    // Private members
+  var Layer = function(mcx, options) {
     var layer_ = this,
         entities_ = [],
-        parallax_ = params.parallax || void 0,
-        parent_ = parent,
-        rtree_ = new meta.RTree((params && params.branch) || 10),
+        parallax_ = (options && options.parallax) || 1,
+        parent_ = (mcx && mcx.getParent()),
+        rtree_ = new meta.RTree((options && options.branch) || 10),
         treehash_ = {},
-        zorder_ = params.z || 0,
-        canvas_ = document.createElement('canvas'),
-        rendered_ = new meta.RCache(params.rblocks),
-        ctx_;
-
-    canvas_.width = params.w;
-    canvas_.height = params.h;
-    canvas_.setAttribute('style', CANVAS_STYLE);
-    ctx_ = canvas_.getContext('2d');
+        zorder_ = (options && options.z) || 0,
+        memos_ = new meta.RCache((options && options.rblocks)),
+        ctx_ = new meta.Context(
+            (options && options.w), (options && options.h));
 
     /**
      * @method render
-     * @param [meta::math::Rect] rect
-     * @return [meta::Layer]
+     * @param rect
+     * @return [Layer]
      */
     this.render = function(rect) {
-      var bs = rendered_.search(rect),
-          es = rtree_.search(rect).append(entities_),
+      var es = rtree_.search(rect).append(entities_),
           drawings = [];
       
-      //TODO sort es by z-index
+      // Sort entities by their z-index
+      es = es.sort();
 
-      // call each entity's ondraw,
-      // allow direct rendering onto main canvas,
-      // store returned drawings
+      // Call each entity's ondraw method, allowing direct rendering onto
+      // canvas, or return a drawing to use with cache.
       es.forEach(function(e) {
-          if (!('draw' in e)) return;
-          drawings.push(e.draw.call(e, layer_));
+          if (e.draw) {
+            drawings.push(e.draw);
+          } else if (e.ondraw) {
+            ctx_.save();
+            drawings.push(e.ondraw.call(e, layer_));
+            ctx_.restore();
+          }
           });
 
-      // copy all drawings to all intersecting cache blocks,
-      // applying onscreen coordinate transformation.
+      // Draw drawings onto cache blocks.
       drawings.forEach(function(d) {
-          if (meta.undef(d)) return;
-          bs.forEach(function(b) {
-              var itx = b.rect.intersect(d.rect);
-              if (!itx) return;
-              b.ctx.drawImage(
-                  d.canvas,
-                  itx.x - d.rect.x,
-                  itx.y - d.rect.y,
-                  itx.w,
-                  itx.h,
-                  itx.x - b.rect.x,
-                  itx.y - b.rect.y,
-                  itx.w,
-                  itx.h);
-              });
+          layer_.draw(d);
           });
 
       return this;
     };
 
     /**
+     * @method makeDrawing
+     *
+     * @return [Drawing]
+     */
+    this.makeDrawing = function() {
+      return {
+        ctx: new meta.Context(),
+        transform: ctx_.getTransform()
+      };
+    };
+
+    /**
+     * @method draw
+     * @param drawing
+     * @return [Layer]
+     *  thisArg
+     */
+    this.draw = function(d) {
+      var bound = d.;
+
+      memos_.search(bound).forEach(function(b) {
+          var itx = b.rect.intersect(d.rect);
+          if (!itx) return;
+
+          b.ctx.save();
+          b.ctx.setTransform(t);
+          b.ctx.drawImage(d.ctx.canvas, 0, 0);
+          b.ctx.restore();
+          });
+
+      return this;
+    };
+
+    /**
+     * @method memo
+     * @param rect
+     * @return [Layer]
+     *  thisArg
+     */
+    this.memo = function(rect) {
+      var newctx = new meta.Context();
+      newctx.translate(-rect.x, -rect.y);
+      memos_.add(rect, {
+        ctx: new meta.Context(),
+        rect: rect
+      });
+      return this;
+    };
+
+    /**
      * @method flip
+     * @param rect
      * @return [meta::Layer]
      */
-    this.flip = function() {
-      var vis = this.getVisibleRect(),
-          bs = rendered_.search(rect);
-
-      bs.forEach(function(b) {
+    this.flip = function(rect) {
+      memos_.search(rect).forEach(function(b) {
           var itx = b.rect.intersect(rect);
           if (!itx) return;
           ctx_.save();
           identity_matrix(ctx_);
           ctx_.globalCompositeOperation = 'copy';
           ctx_.drawImage(
-            b.canvas,
+            b.ctx.canvas,
             itx.x - b.rect.x,
             itx.y - b.rect.y,
             itx.w,
             itx.h,
-            itx.x - vis.x,
-            itx.y - vis.y,
+            itx.x - rect.x,
+            itx.y - rect.y,
             itx.w,
             itx.h);
           ctx_.restore();
           });
-
       return this;
     };
 
     /**
-     * @method createDrawing
-     * Copies the context state to a new context with specified output
-     * geometry applied to transformation.
-     * @param [meta::math::Rect] rect
-     * @return [{canvas, ctx, rect}]
-     */
-    this.createDrawing = function(rect) {
-      var canvas = document.createElement('canvas'),
-          ctx;
-
-      canvas.width = rect.w;
-      canvas.height = rect.h;
-      ctx = canvas.getContext('2d');
-      ctx.translate(-rect.x, -rect.y);
-      apply_context_attributes(ctx, ctx_);
-
-      return {
-        canvas: canvas,
-        context: ctx,
-        rect: rect
-      };
-    };
-
-    /**
-     * @method clear
+     * @method erase
      * Erase pixel data onscreen and in cache without removing
      * cache.
      * @param [meta::math::Rect] rect
      * @return [meta::Layer]
      */
-    this.clear = function(rect) {
-      rendered_.search(rect).forEach(function(b) {
+    this.erase = function(rect) {
+      memos_.search(rect).forEach(function(b) {
           b.ctx.clearRect(rect);
           });
 
@@ -211,8 +163,8 @@
      * @return [meta::Layer]
      */
     this.prune = function(rect) {
-      rendered_.searchWithin(rect).forEach(function(b) {
-          rendered_.remove(b.rect);
+      memos_.searchWithin(rect).forEach(function(b) {
+          memos_.remove(b.rect);
           });
 
       return this;
@@ -225,8 +177,8 @@
      * @return [meta::Layer]
      */
     this.crop = function(rect) {
-      rendered_.searchWithout(rect).forEach(function(b) {
-          rendered_.remove(b.rect);
+      memos_.searchWithout(rect).forEach(function(b) {
+          memos_.remove(b.rect);
           });
 
       return this;
@@ -234,45 +186,139 @@
 
     /**
      * @method resize
-     * @param [{w, h}] params
-     * @return [meta::Layer]
+     *  Change the size of the layer. While preserving the bitmap and
+     *  transformation matrix. Other state is lost, including the stack.
+     *
+     * @param w
+     *  Pixel width as a [Number].
+     * @param h
+     *  Pixel height as a [Number].
+     *
+     * @return [Layer]
+     *  thisArg
      */
-    this.resize = function(params) {
-      canvas_.width = params.w;
-      canvas_.height = params.h;
-      ctx_ = canvas_.getContext('2d');
+    this.resize = function(w, h) {
+      var t = ctx_.getTransform(),
+          bitmap = ctx_.canvas;
+      ctx_ = new meta.Context(w, h);
+      ctx_.drawImage(bitmap, 0, 0);
+      ctx_.setTransform(t);
     };
 
     /**
-     * @method getNativeContext
-     * @return [CanvasRenderingContext2D]
+     * @method getContext
+     * @return [Context]
      */
-    this.getNativeContext = function() {
+    this.getContext = function() {
       return ctx_;
     };
 
     /**
-     * @method addEntity
-     * Stores a new visual entity inside the layer.
-     * @param ctx
+     * @method put
+     *  Store an entity in the layer, indexing if bounds are defined.
+     * 
      * @param e
-     * @param rect
-     * Optional.
-     * @return [meta::Layer]
+     *  The entity to store.
+     *
+     * @return [Layer]
+     *  thisArg
      */
-    this.addEntity = function(ctx, e, bound) {
-      if (meta.undef(e))
-        throw new meta.exception.
-          InvalidParameterException('e', e);
-      if (meta.def(bound)) {
-        e.data.bound = bound;
-        this.rtree.insert(bound, e);
-      } else if (meta.def(e.bound)) {
-        e.data.bound = e.bound.call(e, ctx);
-        this.rtree.insert(e.data.bound, e);
+    this.put = function(e) {
+      if (!e) throw new meta.exception.InvalidParameterException();
+      if (e.bound) {
+        this.rtree.insert(e.bound, e);
+      } else if (e.onbound) {
+        this.rtree.insert(e.onbound.call(e), e);
       } else {
         entities_.push(e);
       }
+      return this;
+    };
+
+
+    /**
+     * @method parallax
+     * @param p
+     * @return [Number]
+     */
+    this.parallax = function(p) {
+      if (meta.undef(p))
+        return parallax_;
+      parallax_ = p;
+      return this;
+    };
+
+    /**
+     * @method getParent
+     * @return [HTMLElement]
+     */
+    this.getParent = function() {
+      return parent_;
+    };
+
+    /**
+     * @method getHeight
+     * @return [Number]
+     */
+    this.getHeight = function() {
+      return ctx_.canvas.height;
+    };
+
+    /**
+     * @method getWidth
+     * @return [Number]
+     */
+    this.getWidth = function() {
+      return ctx_.canvas.width;
+    };
+
+    /**
+     * @method z
+     * @return [Number]
+     */
+    this.z = function(z) {
+      if (meta.undef(z))
+        return zorder_;
+
+      zorder_ = z;
+      ctx_.canvas.setAttribute('style',
+          CANVAS_STYLE + ' z-index: ' + z + ';');
+
+      return this;
+    };
+
+    /**
+     * @method index
+     * @return [meta::Layer]
+     */
+    this.index = function() {
+      var es = this.getUnindexedEntities();
+      es.forEach(function(e, idx, array) {
+          if (!('bound' in e)) return;
+          e.data.bound = e.bound.call(e);
+          rtree_.insert(e.data.bound, e);
+          delete array[idx];
+          }, this);
+      this.setUnindexedEntities(es.filter(meta.def));
+      return this;
+    };
+
+    /**
+     * @method reindex
+     * Index any unindexed entities by their bounding logic.
+     * @param rect
+     * A [meta2d::math::Rect].
+     * @return [meta2d::Context]
+     */
+    this.reindex = function(rect) {
+      if (meta.undef(rect))
+        throw new meta.exception.
+          InvalidParameterException('rect', rect);
+      rtree_.remove(rect).forEach(function(e) {
+          this.addEntity(e);
+          }, this);
+      this.index();
+
       return this;
     };
 
@@ -297,184 +343,12 @@
       return this;
     };
 
-    /**
-     * @method getParallax
-     * @return [Number]
-     */
-    this.getParallax = function() {
-      return parallax_;
-    };
-
-    /**
-     * @method setParallax
-     * @param [Number] value
-     * @return [meta::Layer]
-     */
-    this.setParallax = function(value) {
-      if (meta.undef(value))
-        throw new meta.exception.
-          InvalidParameterException('value', value);
-      parallax_ = value;
-      return this;
-    };
-
-    /**
-     * @method getParent
-     * @return [HTMLElement]
-     */
-    this.getParent = function() {
-      return parent_;
-    };
-
-    /**
-     * @method getHeight
-     * @return [Number]
-     */
-    this.getHeight = function() {
-      return canvas_.height;
-    };
-
-    /**
-     * @method getWidth
-     * @return [Number]
-     */
-    this.getWidth = function() {
-      return canvas_.width;
-    };
-
-    /**
-     * @method getZ
-     * @return [Number]
-     */
-    this.getZ = function() {
-      return zorder_;
-    };
-
-    /**
-     * @method setZ
-     * @param [Number]
-     * @return [meta::Layer]
-     */
-    this.setZ = function(value) {
-      if (meta.undef(value))
-        throw new meta.exception.
-          InvalidParameterException('value', value);
-      zorder_ = value;
-      this.getNativeCanvas().setAttribute('style',
-        CANVAS_STYLE + ' z-index: ' + value + ';');
-      return this;
-    };
-
-    /**
-     * @method getContextAttribute
-     * @param [String] name
-     * @return [any | undefined]
-     */
-    this.getContextAttribute = function(name) {
-      if (name in CONTEXT_ATTRIBUTES)
-        return ctx_[name];
-      return void 0;
-    };
-
-    /**
-     * @method setContextAttribute
-     * @param [String] name
-     * @param [any] value
-     * @return [meta::Context]
-     */
-    this.setContextAttribute = function(name, value) {
-      if (name in CONTEXT_ATTRIBUTES_RO)
-        throw new meta.exception.
-          ReadOnlyAttributeException(name);
-      if (name in CONTEXT_ATTRIBUTES) {
-        ctx_[name] = value;
-        return this;
-      }
-      throw new meta.exception.
-        NonconformantAttributeException(name);
-    };
-
-    /**
-     * @method index
-     * @param [meta::Context] ctx
-     * @return [meta::Layer]
-     */
-    this.index = function(ctx) {
-      var es = this.getUnindexedEntities();
-      es.forEach(function(e, idx, array) {
-          if (!('bound' in e)) return;
-          e.data.bound = e.bound.call(e, ctx);
-          rtree_.insert(e.data.bound, e);
-          delete array[idx];
-          }, this);
-      this.setUnindexedEntities(es.filter(meta.def));
-      return this;
-    };
-
-    /**
-     * @method reindex
-     * Index any unindexed entities by their bounding logic.
-     * @param ctx
-     * A [meta2d::Context].
-     * @param rect
-     * A [meta2d::math::Rect].
-     * @return [meta2d::Context]
-     */
-    this.reindex = function(ctx, rect) {
-      if (meta.undef(rect))
-        throw new meta.exception.
-          InvalidParameterException('rect', rect);
-      rtree_.remove(rect).forEach(function(e) {
-          this.addEntity(ctx, e);
-          }, this);
-      this.index();
-
-      return this;
-    };
-
     // Insert this layer's main canvas into the DOM.
-    parent_.appendChild(canvas_);
-  };
-
-  /**
-   * @method getVisibleRect
-   * Given a [meta::Context] with possible camera/zoom transformations,
-   * computes the rectangle of screen coordinates that would be visible
-   * inside the native context after these transformations.
-   * @param [meta::Context]
-   * @return [meta::math::Rect]
-   */
-  Layer.prototype.getVisibleRect = function(ctx) {
-    if (meta.undef(ctx))
-      throw new meta.exception.
-        InvalidParameterException('ctx', ctx);
-    var pos,
-        offset,
-        rect = {
-          x: 0,
-          y: 0,
-          w: this.getWidth(),
-          h: this.getHeight()
-        },
-        camera = ctx.getCamera(),
-        parallax = this.getParallax();
-
-    if (meta.def(camera) && meta.def(parallax)) {
-      pos = ctx.getCameraProjection().forward.call(ctx, ctx.getCamera());
-      offset = {
-        x: pos.e(1) * this.getParallax.e(1),
-        y: pos.e(2) * this.getParallax.e(2)
-      };
-      rect.x += offset.x;
-      rect.y += offset.y;
-    }
-
-    return rect;
+    parent_.appendChild(ctx_.canvas);
   };
 
   meta.mixSafely(meta, {
     Layer: Layer,
-    round: round
   });
 
 }).call(this);

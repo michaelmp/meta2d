@@ -97,6 +97,29 @@
     return ret;
   };
 
+  /** Get the runtime in milliseconds */
+  var time = (function() {
+    var start = new Date().getTime();
+    return function() {
+      return new Date().getTime() - start;
+    };
+  })();
+
+  /** Get a random number in the interval [0, 1) */
+  var rand = function() {
+    return Math.random();
+  };
+
+  /** Get a random integer in the specified interval (inclusive) */
+  var randInt = function(low, high) {
+    return Math.floor(low + (high - low + 1) * rand());
+  };
+
+  /** Round a float to an integer */
+  var round = function(val) {
+    return (0.5 + val) << 0;
+  };
+
   // Modifiable Types
   var CollisionType = function() {},
       ProjectionType = function() {},
@@ -120,6 +143,10 @@
     min: min,
     idx: index,
     zip: zip,
+    time: time,
+    rand: rand,
+    randInt: randInt,
+    round: round,
     CollisionType: CollisionType,
     ProjectionType: ProjectionType,
     TweenType: TweenType

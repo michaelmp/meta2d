@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Projection');
 
-  var proj1 = meta2d.projection.FLAT,
+  var proj1 = meta2d.projection.flat(),
       proj2 = meta2d.projection.iso2d(20, 10),
       vec1 = new meta2d.math.Vector(0, 0),
       vec1_p = new meta2d.math.Vector(0, 0),

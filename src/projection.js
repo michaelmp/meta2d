@@ -33,14 +33,19 @@
     throw new meta.exception.InvokedAbstractMethodException();
   };
 
-  // [meta2d::Projection]
-  var Flat = function() {};
-  Flat.prototype = new Projection();
-  Flat.prototype.forward = function(v) {
-    return v;
-  };
-  Flat.prototype.reverse = function(v) {
-    return v;
+  // @return [meta2d::Projection]
+  var flat = function() {
+    var o = function() {};
+
+    o.prototype = new Projection();
+    o.prototype.forward = function(v) {
+      return v;
+    };
+    o.prototype.reverse = function(v) {
+      return v;
+    };
+
+    return new o();
   };
 
   // @return [meta2d::Projection]
@@ -120,7 +125,7 @@
   });
 
   meta.projection = meta.declareSafely(meta.projection, {
-    FLAT: new Flat(),
+    flat: flat,
     iso2d: iso_from_2d,
     shift: shift,
     scale: scale

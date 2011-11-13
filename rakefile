@@ -24,12 +24,12 @@ sourcefiles = [
   "src/image.js",
   "src/layer.js",
   "src/lru.js",
+  "src/metacontext.js",
   "src/process.js",
   "src/projection.js",
   "src/rcache.js",
   "src/rtree.js",
   "src/segment.js",
-  "src/selector.js",
   "src/tween.js"
   ]
 

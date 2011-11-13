@@ -21,8 +21,10 @@
       dropped.forEach(function(v) {
           rtree_.findAndRemove(v.rect);
           });
-      rtree_.findAndRemove(rect);
-      rtree_.insert(rect, val);
+      if (dropped.length) {
+        rtree_.findAndRemove(rect);
+        rtree_.insert(rect, val);
+      }
 
       return this;
     };
