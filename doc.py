@@ -1,16 +1,43 @@
 #!/usr/bin/env python
 
 """
-Build an object representation from source comments for output as
-documentation in multiple potential formats.
+Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+
+A quick & dirty script for parsing annotated Javascript comments and building
+a representation of Objects and Mixins for output as documentation in any
+target format.
+
+  How to use this script:
+
+  (1) Install the python interpreter for your system.
+  (2) Write a visitor (see HTMLVisitor below) for your output format.
+      The script comes with an HTML generator. Change __main__ to output your
+      new visitor's output instead of HTML.
+  (3) Input your source through standard input.
+  (4) Redirect standard output to a file.
+
+  Example (UNIXish systems):
+   cat source.js | ./doc.py > doc.html
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 
 import sys
 
-# %(label) denotes the label ([1] in annotation tuple)
-# %(description) denotes the description ([2] in annotation tuple)
-# %(contained) denotes anything that falls through
-#     (classes/mixins contain methods. methods contain params, returns. etc)
+############ Begin HTML example ############
+
 DOC_HTML = {
     'object': '<article> <h1> %(label) </h1> <p> %(description) </p> <p> %(contained) </p> </article>',
     'constructor': '<section> <h2> Constructor </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
@@ -28,6 +55,7 @@ DOC_HTML = {
 </html>
 """
 }
+
 DOC_HTML_TAGS = {
     '--&#62;': '&rarr;',
     '[code]': '<code>',
@@ -37,12 +65,6 @@ DOC_HTML_TAGS = {
     '[url]': '<a href="">',
     '[/url]': '</a>'
 }
-
-METHOD_ANNOTATIONS = ['param', 'return']
-OBJECT_ANNOTATIONS = ['method', 'constructor']
-namespace = {'class': {}, 'mixin': {}}
-focus = None
-method_focus = None
 
 class HTMLVisitor:
   def visit(self, o):
@@ -59,6 +81,13 @@ class HTMLVisitor:
       sanitized = sanitized.replace(t, DOC_HTML_TAGS[t])
     return sanitized
 
+############ End HTML Example ############
+
+METHOD_ANNOTATIONS = ['param', 'return']
+OBJECT_ANNOTATIONS = ['method', 'constructor']
+namespace = {'class': {}, 'mixin': {}}
+focus = None
+method_focus = None
 
 class Visited:
   def __init__(self):
@@ -86,7 +115,8 @@ class Everything(Visited):
     all = []
     for o in namespace.values():
       all += o.values()
-    return sorted(all, lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
+    return sorted(all,
+        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
 
 class Param(Visited):
   def incorporate_annotation(self, a):
@@ -135,9 +165,11 @@ class Method(Visited):
     return 'method'
 
   def getLabel(self):
-    output = self.label + '(' + ', '.join([p.getLabel() for p in self.params]) + ')'
+    output = self.label + '(' + ', '.join( \
+        [p.getLabel() for p in self.params]) + ')'
     if self.ret:
-      output += ' --> ' + self.ret.getLabel() if self.ret.getLabel() else 'void'
+      output += ' --> ' + \
+          self.ret.getLabel() if self.ret.getLabel() else 'void'
     return output
 
   def getContained(self):
@@ -180,7 +212,8 @@ class Object(Visited):
     return 'object'
 
   def getContained(self):
-    methods = sorted(self.contained.values(), lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
+    methods = sorted(self.contained.values(), \
+        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
     return [self.constructor] + methods if self.constructor else methods
 
 def read_annotations(comment):
@@ -239,5 +272,5 @@ if __name__ == "__main__":
     for a in read_annotations(c):
       annotation_to_representation(a)
 
-  # Generate
+  # Generate HTML on standard output.
   print HTMLVisitor().visit(Everything())
