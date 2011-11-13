@@ -165,7 +165,7 @@
       ];
     };
 
-    // Do start the download unless instructed otherwise.
+    // Start the download unless instructed otherwise.
     if (!wait) this.load();
 
   };

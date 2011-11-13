@@ -41,7 +41,7 @@
     return host;
   };
 
-  // Only mix in original properties.
+  // Only mix in novel properties.
   var safe_mix = function(host, vector) {
     if (!vector) return host;
     for (var a in vector)

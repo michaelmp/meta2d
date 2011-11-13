@@ -1,42 +1,39 @@
 #!/usr/bin/env python
 
-"""
-Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
-
-A quick & dirty script for parsing annotated Javascript comments and building
-a representation of Objects and Mixins for output as documentation in any
-target format.
-
-  How to use this script:
-
-  (1) Install the python interpreter for your system.
-  (2) Write a visitor (see HTMLVisitor below) for your output format.
-      The script comes with an HTML generator. Change __main__ to output your
-      new visitor's output instead of HTML.
-  (3) Input your source through standard input.
-  (4) Redirect standard output to a file.
-
-  Example (UNIXish systems):
-   cat source.js | ./doc.py > doc.html
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-"""
+# Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+#
+# A quick & dirty script for parsing annotated Javascript comments and building
+# a representation of Objects and Mixins for output as documentation in any
+# target format.
+#
+# How to use this script:
+#
+# (1) Install the python interpreter for your system.
+# (2) Write a visitor (see HTMLVisitor below) for your output format.
+#     The script comes with an HTML generator. Change __main__ to output your
+#     new visitor's output instead of HTML.
+# (3) Input your source through standard input.
+# (4) Redirect standard output to a file.
+#
+# Example (UNIXish systems):
+#  cat source.js | ./doc.py > doc.html
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 
-############ Begin HTML example ############
+############ Begin HTML generator ############
 
 DOC_HTML = {
     'object': '<article> <h1> %(label) </h1> <p> %(description) </p> <p> %(contained) </p> </article>',
@@ -81,7 +78,7 @@ class HTMLVisitor:
       sanitized = sanitized.replace(t, DOC_HTML_TAGS[t])
     return sanitized
 
-############ End HTML Example ############
+############ End HTML generator ############
 
 METHOD_ANNOTATIONS = ['param', 'return']
 OBJECT_ANNOTATIONS = ['method', 'constructor']
@@ -242,7 +239,7 @@ def parse(input):
       l = line.lstrip()
       if not l or l[0] != '*':
         continue
-      c += l.lstrip().partition('*')[2] + '\n';
+      c += l.lstrip().partition('*')[2] + '\n'
     comments.append(c)
   return comments
 
