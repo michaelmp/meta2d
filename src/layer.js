@@ -47,7 +47,7 @@
     var layer_ = this,
         entities_ = [],
         parallax_ = (options && options.parallax) || 1,
-        parent_ = (mcx && mcx.getParent()),
+        parent_ = (mcx && mcx.getRootNode()),
         rtree_ = new meta.RTree((options && options.branch) || 10),
         treehash_ = {},
         zorder_ = (options && options.z) || 0,
@@ -106,7 +106,7 @@
      *  thisArg
      */
     this.draw = function(d) {
-      var bound = d.;
+      var bound = void 0;
 
       memos_.search(bound).forEach(function(b) {
           var itx = b.rect.intersect(d.rect);
@@ -272,10 +272,10 @@
     };
 
     /**
-     * @method getParent
+     * @method getRootNode
      * @return [HTMLElement]
      */
-    this.getParent = function() {
+    this.getRootNode = function() {
       return parent_;
     };
 

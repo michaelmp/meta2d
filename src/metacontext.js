@@ -30,29 +30,35 @@
   var ENTITY_COUNT = 0;
 
   /**
-   * @class MetaContext2d
+   * @class MetaContext
    */
 
   /**
    * @constructor
    *
-   * @param canvas
+   * @param node
+   *  An HTML element to append canvases to as child nodes.
+   *  If node is a canvas element, will use as single layer.
+   *    Additionally, any fallback content can be viewed.
    *  
    */
-  var MetaContext2d = function(canvas) {
-    if (meta.isString(canvas))
-      canvas = document.getElementById(canvas);
-    if (!canvas)
+  var MetaContext = function(node, options) {
+    if (meta.isString(node))
+      node = document.getElementById(node);
+    if (!node)
       throw new meta.exception.InvalidParameterException();
 
-    var parent_ = createElement('div'),
+    var parent_ = document.createElement('div'),
         layers_ = {},
-        tags_ {},
+        tags_ = {},
         cameraPos_ = [0, 0],
         cameraProj_ = meta.projection.flat(),
         cursorPos_,
-        activeLayer = 'default',
-        focus_ = null;
+        activeLayer_ = 'default',
+        focus_ = null,
+        w_ = options && options.w,
+        h_ = options && options.h,
+        canvas_ = void 0;
 
     // @private
     var getActiveLayer_ = function() {
@@ -63,6 +69,13 @@
     };
 
     /**
+     * @method getRootNode
+     */
+    this.getRootNode = function() {
+      return parent_;
+    };
+
+    /**
      * @method camera
      *
      * @param pos
@@ -70,7 +83,7 @@
      *
      * @return
      */
-    this.camera(pos) {
+    this.camera = function(pos) {
       if (!pos) return cameraPos_
       return cameraPos_ = pos;
     };
@@ -82,7 +95,7 @@
      *
      * @return
      */
-    this.cursor(pos) {
+    this.cursor = function(pos) {
       if (!pos) return cursorPos_;
       return cursorPos_ = pos
     };
@@ -149,7 +162,7 @@
               });
           });
       
-      return Object.keys(sel).map(function(id) return sel[id];);
+      return Object.keys(sel).map(function(id) {return sel[id];});
     };
 
     /**
@@ -191,7 +204,7 @@
       if (name in layers_) {
         activeLayer_ = name;
       } else {
-        layers_[name] = new meta.Layer();
+        layers_[name] = new meta.Layer(this, options);
       }
       return this;
     };
@@ -226,14 +239,18 @@
     this.resize = function(w, h) {
       if (meta.undef(w) || meta.undef(h))
         throw new meta.exception.InvalidParameterException();
-      var style =
-        'width: ' + canvas_.width + 'px;' +
-        'height: ' + canvas_.height + 'px;' +
+      
+      var style = canvas_ ?
+        '' :
+        'width: ' + w + 'px;' +
+        'height: ' + w + 'px;' +
         'position: relative;';
 
+
       parent_.setAttribute('style', style);
-      layers_.forEach(function(layer) {
-          layer.resize(w, h);
+
+      Object.keys(layers_).forEach(function(l) {
+          layers_[l].resize(w, h);
           }, this);
 
       return this;
@@ -252,8 +269,8 @@
     var defer_to_all_layers = function(method) {
       var f = function() {
         var args = arguments;
-        layers_.forEach(function(layer) {
-            layer[method.slice(0, -3)].apply(layer, args)
+        Object.keys(layers_).forEach(function(l) {
+            layers_[l][method.slice(0, -3)].apply(layers_[l], args)
             });
       };
       this[method] = f.bind(this);
@@ -263,7 +280,7 @@
     var invoke_in_layer_context = function(method) {
       var f = function() {
         var layer = getActiveLayer_(),
-            ctx = layer.getNativeContext2d();
+            ctx = layer.getContext();
         ctx[method].apply(ctx, arguments);
       };
       this[method] = f.bind(this);
@@ -328,11 +345,11 @@
     ].forEach(invoke_in_layer_context, this);
 
     var get = function(attribute) {
-      return getActiveLayer_().getNativeContext2d()[attribute];
+      return getActiveLayer_().getContext()[attribute];
     };
 
     var set = function(attribute, value) {
-      getActiveLayer_().getNativeContext2d()[attribute] = value;
+      getActiveLayer_().getContext()[attribute] = value;
     };
 
     // Define getter/setter for writable Context2d properties.
@@ -340,9 +357,7 @@
       Object.defineProperty(this, attribute, {
           get: get.bind(this, attribute),
           set: set.bind(this, attribute),
-          configurable: true,
           enumerable: true,
-          writable: true
           });
     };
 
@@ -368,14 +383,12 @@
     Object.defineProperty(this, 'canvas', {
         get: get.bind(this, 'canvas'),
         set: void 0,
-        configurable: false,
-        enumerable: true,
-        writable: false
+        enumerable: true
         });
 
-    this.resize(canvas_.width, canvas_.height);
-    canvas.appendChild(parent_);
-    layers_['default'] = new Layer();
+    this.resize(w_, h_);
+    node.appendChild(parent_);
+    layers_['default'] = new meta.Layer(this, options);
     
     var mouse_screen_pos = function(event) {
       return [
@@ -419,7 +432,7 @@
   };
 
   meta.mixSafely(meta, {
-    MetaContext2d: MetaContext2d
+    MetaContext: MetaContext
   });
 
 }).call(this);

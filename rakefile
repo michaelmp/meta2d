@@ -16,6 +16,7 @@ directory "jsmin/bin"
 sourcefiles = [ 
   "src/meta2d.js",
   "src/modify.js",
+  "src/math/affine.js",
   "src/math/rect.js",
   "src/math/vector.js",
   "src/animation.js",
@@ -31,7 +32,7 @@ sourcefiles = [
   "src/rtree.js",
   "src/segment.js",
   "src/tween.js"
-  ]
+]
 
 signature = %{"/**\n * meta2d.js (c) 2011 Michael Morris-Pearce\n * visit https://gitorious.org/meta2d/ for more information. */"}
 

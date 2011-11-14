@@ -7,7 +7,7 @@
 
   this.print = function(msg) {
     output.innerHTML += msg;
-    setTimeout(function(){}, 0);
+    setTimeout(void 0, 0);
   };
 
   this.println = function(msg) {

@@ -26,6 +26,8 @@
       meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
+  var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
+
   var get = function(attribute) {
     return nativeCtx_[attribute];
   };
@@ -48,8 +50,10 @@
    */
   var Context = function(w, h) {
     var ctx_ = this,
-        canvas_ = new document.createElement('canvas'),
-        nativeCtx_;
+        canvas_ = document.createElement('canvas'),
+        nativeCtx_,
+        matrix_ = meta.math.affine.identity(),
+        stack = [matrix_];
     
     canvas_.width = w;
     canvas_.height = h;
@@ -58,9 +62,10 @@
 
     var do_the_right_thing = function(method) {
       var f = function() {
-        return nativeCtx_[method].apply(this, arguments);
+        return CanvasRenderingContext2D.prototype[method]
+          .apply(nativeCtx_, arguments);
       };
-      return f.bind(this);
+      this[method] = f.bind(this);
     };
 
     [ // straight-up Context2d methods.
@@ -98,9 +103,7 @@
       Object.defineProperty(this, attribute, {
           get: get.bind(this, attribute),
           set: set.bind(this, attribute),
-          configurable: true,
           enumerable: true,
-          writable: true
           });
     };
 
@@ -124,49 +127,53 @@
 
     // read-only 'canvas' attribute of Context2d.
     Object.defineProperty(this, 'canvas', {
-        get: get.bind(this, 'canvas'),
-        set: void 0,
-        configurable: false,
         enumerable: true,
-        writable: false
+        writable: false,
+        value: canvas_
         });
 
     this.save = function() {
       matrix_ = matrix_.slice(0);
       stack_.push(matrix_);
-      return nativeCtx_.save.apply(this, arguments);
+      return CanvasRenderingContext2D.prototype.save
+        .apply(nativeCtx_, arguments);
     };
 
     this.restore = function() {
       matrix_ = stack_.pop();
-      return nativeCtx_.restore.apply(this, arguments);
+      if (stack_.length <= 0) stack_.push(matrix_);
+      return CanvasRenderingContext2D.prototype.restore
+        .apply(nativeCtx_, arguments);
     };
 
     this.scale = function(x, y) {
-      // scale the matrix
-      2x2 X [[x, 0] [0, y]]
-      
-      return nativeCtx_.scale.apply(this, arguments);
+      matrix_ = meta.math.affine.scale(matrix_, x, y);
+      return CanvasRenderingContext2D.prototype.scale
+        .apply(nativeCtx_, arguments);
     };
 
     this.rotate = function(angle) {
-      // rotate the matrix
-      return nativeCtx_.rotate.apply(this, arguments);
+      matrix_ = meta.math.affine.rotate(matrix_, angle);
+      return CanvasRenderingContext2D.prototype.rotate
+        .apply(nativeCtx_, arguments);
     };
 
     this.translate = function(x, y) {
-      // translate the matrix
-      return nativeCtx_.translate.apply(this, arguments);
+      matrix_ = meta.math.affine.translate(matrix_, x, y);
+      return CanvasRenderingContext2D.prototype.translate
+        .apply(nativeCtx_, arguments);
     };
 
     this.transform = function(a, b, c, d, e, f) {
-      // transform the matrix
-      return nativeCtx_.transform.apply(this, arguments);
+      matrix_ = meta.math.affine.transform[matrix_, [a, b, c, d, e, f]];
+      return CanvasRenderingContext2D.prototype.transform
+        .apply(nativeCtx_, arguments);
     };
 
     this.setTransform = function(a, b, c, d, e, f) {
-      // set the matrix
-      return nativeCtx_.transform.apply(this, arguments);
+      matrix_ = [a, b, c, d, e, f];
+      return CanvasRenderingContext2D.prototype.setTransform
+        .apply(nativeCtx_, arguments);
     };
 
     this.getTransform = function() {
