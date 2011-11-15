@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>meta2d.js Layer Demo</title>
+</head>
+<body>
+  
+<div id="demo"></div>
+
+<noscript>
+You will need to enable Javascript to run this demo.
+</noscript>
+
+<script type="text/javascript" src="meta2d.js"></script>
+<script type="text/javascript">
+
+document.addEventListener('DOMContentLoaded',
+function() {
+  // This demonstration showcases how layers work in MetaContext2D.
+  // We will draw a simple nature scene using paths.
+  // We will use z-ordering to set order in which the layers appear.
+
+  // First, make a metacontext.
+  var mcx = new meta2d.MetaContext('demo', {w: 400, h: 300})
+
+  // Naming a new layer creates it and makes it the active layer.
+  mcx.layer('backdrop')
+
+  // Per-layer operations affect the active layer, so this sets
+  // the z-order of the 'backdrop' layer to 2.
+  mcx.z(0)
+
+  // You can draw on the 'backdrop' layer like a normal 2d context.
+  // Let's make a light blue sky.
+  mcx.fillStyle = '#aaccff'
+  mcx.fillRect(0, 0, 400, 300)
+
+  // Specifying a new layer sets 'backdrop' aside until we select it
+  // again. Each layer has its own individual properties and rendering
+  // context.
+  mcx.layer('foreground').z(3)
+  var grad = mcx.createLinearGradient(0, 100, 0, 300)
+  grad.addColorStop(0, '#00cc00')
+  grad.addColorStop(1, '#66ff66')
+  mcx.fillStyle = grad
+  mcx.beginPath()
+  mcx.moveTo(0,120)
+  for (var x = 0; x <= 400; x++) {
+    mcx.lineTo(x, 120 + 10 * Math.sin(x / 20))
+  }
+  mcx.lineTo(400, 300)
+  mcx.lineTo(0, 300)
+  mcx.closePath()
+  mcx.fill()
+
+  // Finally, let's jazz things up with a little bit of animation in
+  // a middle layer.
+  mcx.layer('scenery').z(1)
+  mcx.translate(250, 100)
+  mcx.fillStyle = 'rgba(250, 200, 150, 0.2)'
+  var angle = 0
+
+  var sun = function() {
+    mcx.layer('scenery') // Make sure we're using the correct layer.
+    mcx.globalCompositeOperation = 'lighter'
+    mcx.globalAlpha = 1
+    angle += Math.PI / 8
+    mcx.rotate(angle)
+    mcx.fillRect(-40, -40, 80, 80)
+  }
+  setInterval(sun, 100)
+
+  var fade = function() {
+    mcx.layer('scenery')
+    mcx.globalCompositeOperation = 'copy'
+    mcx.globalAlpha = 0.8
+    mcx.save()
+    mcx.setTransform(1, 0, 0, 1, 0, 0)
+    mcx.drawImage(mcx.canvas, 0, 0)
+    mcx.restore()
+  }
+  setInterval(fade, 200)
+
+  // Finishing touches
+  mcx.layer('detail').z(2)
+  mcx.translate(250, 100)
+  mcx.fillStyle = '#888844'
+  mcx.font = '30px sans'
+  mcx.fillText('^ ^', -30, 10)
+
+})
+
+</script>
+
+</body>
+</html>

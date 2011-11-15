@@ -69,6 +69,20 @@
     };
 
     /**
+     * @method getWidth
+     */
+    this.getWidth = function() {
+      return w_;
+    };
+
+    /**
+     * @method getHeight
+     */
+    this.getHeight = function() {
+      return h_;
+    };
+
+    /**
      * @method getRootNode
      */
     this.getRootNode = function() {
@@ -201,11 +215,10 @@
      *  thisArg
      */
     this.layer = function(name) {
-      if (name in layers_) {
-        activeLayer_ = name;
-      } else {
+      if (! (name in layers_)) {
         layers_[name] = new meta.Layer(this, options);
       }
+      activeLayer_ = name;
       return this;
     };
 
@@ -281,7 +294,7 @@
       var f = function() {
         var layer = getActiveLayer_(),
             ctx = layer.getContext();
-        ctx[method].apply(ctx, arguments);
+        return ctx[method].apply(ctx, arguments);
       };
       this[method] = f.bind(this);
     };
@@ -293,7 +306,11 @@
       'flip',
       'prune',
       'render',
-      'memo'
+      'memo',
+      'parallax',
+      'z',
+      'index',
+      'reindex'
     ].forEach(defer_to_layer, this);
 
     [ // Rendering methods on all layers.

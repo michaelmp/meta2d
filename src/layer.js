@@ -258,7 +258,6 @@
       return this;
     };
 
-
     /**
      * @method parallax
      * @param p
