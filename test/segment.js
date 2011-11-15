@@ -1,15 +1,17 @@
 document.addEventListener('DOMContentLoaded',
 (function() {
-  this.printheader('meta2d::Segment');
+  this.printheader('meta2d::segment');
 
   // constructor
   printsection('Constructor');
-  var s1 = new meta2d.Segment(),
-      s2 = new meta2d.Segment(0),
-      s3 = new meta2d.Segment(void 0, 0),
-      s4 = meta2d.segment.ALWAYS,
-      s5 = new meta2d.Segment(-10, 10),
-      seg = meta2d.segment;
+  var seg = meta2d.segment,
+      s1 = seg.segment(),
+      s2 = seg.segment(0),
+      s3 = seg.segment(void 0, 0),
+      s4 = seg.always(),
+      s5 = seg.segment(-10, 10),
+      s6 = seg.segment(1, -1),
+      s7 = seg.segment(Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
 
   assert('start at infinity',
       seg.start(s1) === seg.start(s3) &&
@@ -48,9 +50,6 @@ document.addEventListener('DOMContentLoaded',
 
   // forward
   printsection('isForward');
-  var s6 = new meta2d.Segment(1, -1),
-      s7 = new meta2d.Segment(Number.POSITIVE_INFINITY,
-                              Number.NEGATIVE_INFINITY);
   assert('isForward',
       seg.isForward(s1) &&
       seg.isForward(s5));

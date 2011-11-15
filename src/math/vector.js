@@ -26,11 +26,11 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
-  /**
-   * @class Vector
-   *  : Array
-   */
-  var Vector = Array;
+  // a Vector is an Array
+  var vector = function() {
+    var ret = new Array();
+    return ret.concat(meta.args(arguments));
+  };
 
   /** and 2 values */
   var ander = function(a, b) {
@@ -109,9 +109,8 @@
     return v.map(function(e) {return 1/e;});
   };
 
-  meta.math = meta.declareSafely(meta.math, {
-    Vector: Vector});
   meta.math.vector = meta.declareSafely(meta.math.vector, {
+    vector: vector,
     equal: equal,
     plus: plus,
     minus: minus,

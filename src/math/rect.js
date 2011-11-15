@@ -27,79 +27,93 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace';
 
-  var tblr = function(rect) {
-    return {
-      t: rect.y,
-      b: rect.y + rect.h,
-      l: rect.x,
-      r: rect.x + rect.w
-    };
+  var xywh_to_tblr = function(xywh) {
+    return [
+      xywh[1],
+      xywh[1] + xywh[3],
+      xywh[0],
+      xywh[0] + xywh[2]
+    ];
   };
 
-  // @constructor
-  // @param (x, y, w ,h) | [{x, y, w, h}]
-  var Rect = function() {
-    if (arguments.length === 1) {
-      this.x = arguments[0].x || 0;
-      this.y = arguments[0].y || 0;
-      this.w = arguments[0].w || 0;
-      this.h = arguments[0].h || 0;
-    } else {
-      this.x = arguments[0] || 0;
-      this.y = arguments[1] || 0;
-      this.w = arguments[2] || 0;
-      this.h = arguments[3] || 0;
+  // return [x, y, w, h] from arguments
+  var rect = function() {
+    var args = meta.args(arguments);
+    if (args.length === 4) {
+      return args; 
+    } else if (args.length === 3) {
+      return [args[0], args[1], args[2], 0];
+    } else if (args.length === 2) {
+      return [args[0], args[1], 0, 0];
+    } else if (args.length === 1) {
+      if (meta.isObject(args[0])) {
+        meta.mixSafely(args[0], {x: 0, y: 0, w: 0, h: 0});
+        return [args[0].x, args[0].y, args[0].w, args[0].h];
+      }
     }
-  };
+    return [0, 0, 0, 0];
+  }
 
-  // @return [null | meta::math::Rect]
-  Rect.prototype.intersect = function(r) {
-    var tblr1 = tblr(this),
-        tblr2 = tblr(r),
-        t = Math.max(tblr1.t, tblr2.t),
-        b = Math.min(tblr1.b, tblr2.b),
-        l = Math.max(tblr1.l, tblr2.l),
-        r = Math.min(tblr1.r, tblr2.r);
+  // @return [Rect | null]
+  var intersect = function(r1, r2) {
+    var tblr1 = xywh_to_tblr(r1),
+        tblr2 = xywh_to_tblr(r2),
+        t = Math.max(tblr1[0], tblr2[0]),
+        b = Math.min(tblr1[1], tblr2[1]),
+        l = Math.max(tblr1[2], tblr2[2]),
+        r = Math.min(tblr1[3], tblr2[3]);
 
     if (b < t || r < l) return null;
     if (t === b) {
-      if (t === tblr1.t && t >= tblr2.b) return null;
-      if (t === tblr2.t && t >= tblr1.b) return null;
+      if (t === tblr1[0] && t >= tblr2[1]) return null;
+      if (t === tblr2[0] && t >= tblr1[1]) return null;
     }
     if (l === r) {
-      if (l === tblr1.l && l >= tblr2.r) return null;
-      if (l === tblr2.l && l >= tblr1.r) return null;
+      if (l === tblr1[2] && l >= tblr2[3]) return null;
+      if (l === tblr2[2] && l >= tblr1[3]) return null;
     }
 
-    return new Rect(l, t, r - l, b - t);
+    return [
+      l,
+      t,
+      r - l,
+      b - t
+    ];
   };
 
   // @return [Boolean]
-  Rect.prototype.contains = function(r) {
-    return r.x >= this.x &&
-           r.y >= this.y &&
-           r.x + r.w <= this.x + this.w &&
-           r.y + r.h <= this.y + this.h;
+  var contains = function(r1, r2) {
+    return r2[0] >= r1[0] &&
+           r2[1] >= r1[1] &&
+           r2[0] + r2[2] <= r1[0] + r1[2] &&
+           r2[1] + r2[3] <= r1[1] + r1[3];
   };
 
   // @return [Boolean]
-  Rect.prototype.containedBy = function(r) {
-    return r.contains(this);
+  var containedBy = function(r1, r2) {
+    return contains(r2, r1);
   };
 
   // @return [Boolean]
-  Rect.prototype.sameAs = function(r) {
-    return r.x === this.x &&
-           r.y === this.y &&
-           r.w === this.w &&
-           r.h === this.h;
+  var equal = function(r1, r2) {
+    return r1[0] === r2[0] &&
+           r1[1] === r2[1] &&
+           r1[2] === r2[2] &&
+           r1[3] === r2[3];
   };
 
   // @return [Number]
-  Rect.prototype.area = function() {
-    return this.w * this.h;
+  var area = function(r) {
+    return r[2] * r[3];
   };
 
-  meta.math = meta.declareSafely(meta.math, {Rect: Rect});
+  meta.math.rect = meta.declareSafely(meta.math.rect, {
+    rect: rect,
+    intersect: intersect,
+    contains: contains,
+    containedBy: containedBy,
+    equal: equal,
+    area: area
+  });
 
 }).call(this);

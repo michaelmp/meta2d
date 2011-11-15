@@ -2,20 +2,19 @@ document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Projection');
 
-  var proj1 = meta2d.projection.flat(),
+  var v = meta2d.math.vector,
+      proj1 = meta2d.projection.flat(),
       proj2 = meta2d.projection.iso2d(20, 10),
-      vec1 = new meta2d.math.Vector(0, 0),
-      vec1_p = new meta2d.math.Vector(0, 0),
-      vec2 = new meta2d.math.Vector(-1, -1),
-      vec2_p = new meta2d.math.Vector(0, -10),
-      vec3 = new meta2d.math.Vector(3, 3),
-      vec3_p = new meta2d.math.Vector(0, 30),
-      vec4 = new meta2d.math.Vector(4, 1),
-      vec4_p = new meta2d.math.Vector(30, 25),
-      vec5 = new meta2d.math.Vector(1, 4),
-      vec5_p = new meta2d.math.Vector(-30, 25);
-
-  var v = meta2d.math.vector;
+      vec1 = v.vector(0, 0),
+      vec1_p = v.vector(0, 0),
+      vec2 = v.vector(-1, -1),
+      vec2_p = v.vector(0, -10),
+      vec3 = v.vector(3, 3),
+      vec3_p = v.vector(0, 30),
+      vec4 = v.vector(4, 1),
+      vec4_p = v.vector(30, 25),
+      vec5 = v.vector(1, 4),
+      vec5_p = v.vector(-30, 25);
 
   printsection('flat projection');
   assert('forward',

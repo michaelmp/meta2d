@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded',
 (function() {
   this.printheader('meta2d::Tween');
 
-  var seg1 = new meta2d.Segment(0, 10),
-      seg2 = new meta2d.Segment(),
-      seg3 = new meta2d.Segment(-5, 5),
+  var seg1 = meta2d.segment.segment(0, 10),
+      seg2 = meta2d.segment.segment(),
+      seg3 = meta2d.segment.segment(-5, 5),
       twn1 = new meta2d.tween.constant('a', 5),
       twn2 = new meta2d.tween.constant('b', 'b'),
       twn3 = new meta2d.tween.constant('c', {}),

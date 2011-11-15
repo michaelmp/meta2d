@@ -27,18 +27,13 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
-  /**
-   * @class Segment
-   *  Segment === Array of length 2.
-   */
-  var Segment = function(start, end) {
+  var segment = function(start, end) {
     if (meta.undef(start))
       start = Number.NEGATIVE_INFINITY;
     if (meta.undef(end))
       end = Number.POSITIVE_INFINITY;
-    this.push(start, end);
+    return [start, end];
   };
-  Segment.prototype = new Array();
 
   var start = function(seg) {
     return seg[0];
@@ -76,12 +71,13 @@
         });
   };
 
-  meta.mixSafely(meta, {
-    Segment: Segment
-  });
+  var always = function() {
+    return segment();
+  };
 
   meta.segment = meta.declareSafely(meta.segment, {
-    ALWAYS: [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+    segment: segment,
+    always: always,
     start: start,
     end: end,
     isForward: is_forward,

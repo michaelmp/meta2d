@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded',
   var image;
 
   var loadfail = function() {
-    this.printhead('meta2d::Context');
+    this.printheader('meta2d::Context');
     assert('Could not load images.');
     summarize();
   };
