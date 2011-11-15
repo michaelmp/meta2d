@@ -28,14 +28,6 @@
 
   var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
 
-  var get = function(attribute) {
-    return nativeCtx_[attribute];
-  };
-
-  var set = function(attribute, value) {
-    nativeCtx_[attribute] = value;
-  };
-  
   /**
    * @class Context
    *  Extends CanvasRenderingContext2D with getTransform and getBounds
@@ -53,12 +45,20 @@
         canvas_ = document.createElement('canvas'),
         nativeCtx_,
         matrix_ = meta.math.affine.identity(),
-        stack = [matrix_];
+        stack_ = [matrix_];
     
     canvas_.width = w;
     canvas_.height = h;
     canvas_.setAttribute('style', CANVAS_STYLE);
     nativeCtx_ = canvas_.getContext('2d');
+
+    var get = function(attribute) {
+      return nativeCtx_[attribute];
+    };
+
+    var set = function(attribute, value) {
+      nativeCtx_[attribute] = value;
+    };
 
     var do_the_right_thing = function(method) {
       var f = function() {
