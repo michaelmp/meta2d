@@ -61,7 +61,7 @@
      * @return [Layer]
      */
     this.render = function(rect) {
-      var es = rtree_.search(rect).append(entities_),
+      var es = rtree_.search(rect).concat(entities_),
           drawings = [];
       
       // Sort entities by their z-index
@@ -70,11 +70,14 @@
       // Call each entity's ondraw method, allowing direct rendering onto
       // canvas, or return a drawing to use with cache.
       es.forEach(function(e) {
+          var d;
           if (e.draw) {
             drawings.push(e.draw);
           } else if (e.ondraw) {
             ctx_.save();
-            drawings.push(e.ondraw.call(e, layer_));
+            if (e.pos) ctx_.translate(e.pos[0], e.pos[1]);
+            d = e.ondraw.call(e.model, ctx_, layer_);
+            if (d) drawings.push(d);
             ctx_.restore();
           }
           });

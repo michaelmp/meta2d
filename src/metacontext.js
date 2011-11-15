@@ -144,6 +144,7 @@
       if (meta.isString(tags)) tags = tags.split(' ');
       var e = meta.mixSafely({id: ENTITY_COUNT++, tags: tags}, options),
           l = getActiveLayer_();
+      meta.mixSafely(e, {model: {}});
 
       tags.forEach(function(t) {
           var es = tags_[t];
