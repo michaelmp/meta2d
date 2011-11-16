@@ -1,10 +1,12 @@
-meta2d.js
-=============
+Meta2D
+======
 
 meta2d.js provides the MetaContext, an enhanced implementation of the
-CanvasRenderingContext2D API in HTML5.
+CanvasRenderingContext2D API as drafted by the World Wide Web Consortium
+in HTML5.
 
-A MetaContext does everything that a native Context2D can do and more:
+A MetaContext does everything that a native Context2D can do in the browser and
+much more:
 -  Layers
 -  Entities
 -  Cacheing
@@ -21,7 +23,7 @@ following order:
 1  layer.html - How a MetaContext is many Contexts in one.
 2  entity.html - The scene model & tag selection.
 3  cache1.html - Do not repeat yourself.
-4  mouse.html - Use cached bitmaps to do alpha-masked mouse interaction.
+4  mouse.html - Use cached bitmaps for mouse interaction.
 5  cache2.html - Static offscreen pixel cacheing.
 6  cache3.html - Dynamic offscreen pixel cacheing.
 
@@ -32,14 +34,14 @@ Install the rake build program and run:
 
     rake
 
-You should have a large Javascript source in build/, along with a minified
-version, and gzipped versions of both (you will need to install gzip).
+You should have a large Javascript source in the build/ directory, along with a
+minified version, and gzipped versions of both (you will need to install gzip).
 
 You can build HTML documentation files by running:
 
     rake document
 
-This will output a single html file to doc/, which also includes a stylesheet.
+This will output a single html file to the doc/ directory.
 
 Development
 -----------

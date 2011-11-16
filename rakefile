@@ -12,7 +12,7 @@ directory "build"
 directory "doc"
 directory "jsmin/bin"
 
-# Order matters: most source files are dependent on meta2d.js and modifier.js.
+# Order matters:
 sourcefiles = [ 
   "src/meta2d.js",
   "src/modify.js",
