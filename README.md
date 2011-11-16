@@ -1,11 +1,29 @@
 meta2d.js
 =============
 
-meta2d.js provides the MetaContext2D, an enhanced implementation of the
+meta2d.js provides the MetaContext, an enhanced implementation of the
 CanvasRenderingContext2D API in HTML5.
+
+A MetaContext does everything that a native Context2D can do and more:
+-  Layers
+-  Entities
+-  Cacheing
+-  Mouse Interaction
 
 This project is hosted at <https://gitorious.org/meta2d>. Check there for
 updates and other information not found in this readme file.
+
+Where to Start
+--------------
+
+The demo files are a great place to start. You may want to read them in the
+following order:
+1  layer.html - How a MetaContext is many Contexts in one.
+2  entity.html - The scene model & tag selection.
+3  cache1.html - Do not repeat yourself.
+4  mouse.html - Use cached bitmaps do alpha-masked mouse interaction.
+5  camera.html - Static offscreen pixel caches.
+6  cache2.html - Dynamic offscreen pixel caches.
 
 How to Build
 ------------
@@ -14,9 +32,14 @@ Install the rake build program and run:
 
     rake
 
+You should have a large Javascript source in build/, along with a minified
+version, and gzipped versions of both (you will need to install gzip).
+
 You can build HTML documentation files by running:
 
     rake document
+
+This will output a single html file to doc/, which also includes a stylesheet.
 
 Development
 -----------
@@ -24,6 +47,21 @@ Development
 ### Main Branch ###
 
     git clone git://gitorious.org/meta2d/meta2d.git meta2d
+
+### Testing ###
+
+The test/ directory contains scripts you can run in your browser to perform
+a battery of unit tests. If you get a SECURITY_ERR exception it probably means
+that you're serving the tests from a local origin and your browser doesn't like
+the request to read image pixel data from your filesystem. The easy fix is to
+serve the tests from a web server.
+
+### Contact ###
+
+Please share feedback, bugs, patches, feature requests, and success stories
+by contacting the project owner(s) on the gitorious project page.
+
+    https://gitorious.org/meta2d
 
 License
 -------
