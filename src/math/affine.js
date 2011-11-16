@@ -22,6 +22,7 @@
 /** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
 (function() {
+  'use strict';
   var root = this;
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
