@@ -21,9 +21,9 @@ following order:
 1  layer.html - How a MetaContext is many Contexts in one.
 2  entity.html - The scene model & tag selection.
 3  cache1.html - Do not repeat yourself.
-4  mouse.html - Use cached bitmaps do alpha-masked mouse interaction.
-5  camera.html - Static offscreen pixel caches.
-6  cache2.html - Dynamic offscreen pixel caches.
+4  mouse.html - Use cached bitmaps to do alpha-masked mouse interaction.
+5  cache2.html - Static offscreen pixel cacheing.
+6  cache3.html - Dynamic offscreen pixel cacheing.
 
 How to Build
 ------------
