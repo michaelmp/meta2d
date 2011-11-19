@@ -67,14 +67,14 @@
   var equal = function() {
     if (arguments.length < 1)
       return new meta.exception.InvalidParameterException();
-    var arguments = meta.args(arguments),
-        max = arguments.map(meta.len).reduce(max2),
+    var args = meta.args(arguments),
+        max = args.map(meta.len).reduce(max2),
         ref, i, brk;
     if (max === 0) return true;
 
     for (i = 0; i < max; i++) {
-      ref = meta.idx(i, arguments[0]);
-      arguments.forEach(function(array) {
+      ref = meta.idx(i, args[0]);
+      args.forEach(function(array) {
           if (!equality(meta.idx(i, array), ref)) brk = true;
           });
       if (brk) return false;

@@ -20,12 +20,10 @@ Where to Start
 
 The demo files are a great place to start. You may want to read them in the
 following order:
-1  layer.html - How a MetaContext is many Contexts in one.
-2  entity.html - The scene model & tag selection.
-3  cache1.html - Do not repeat yourself.
-4  mouse.html - Use cached bitmaps for mouse interaction.
-5  cache2.html - Static offscreen pixel cacheing.
-6  cache3.html - Dynamic offscreen pixel cacheing.
+1  layer.html - How a MetaContext uses multiple canvases.
+2  entity.html - The scene model & tags.
+3  drawing.html - Introduction to Drawings and the double-buffer.
+4  cache1.html - Do not repeat yourself.
 
 How to Build
 ------------
@@ -53,10 +51,11 @@ Development
 ### Testing ###
 
 The test/ directory contains scripts you can run in your browser to perform
-a battery of unit tests. If you get a SECURITY_ERR exception it probably means
-that you're serving the tests from a local origin and your browser doesn't like
-the request to read image pixel data from your filesystem. The easy fix is to
-serve the tests from a web server.
+a battery of unit tests.
+
+If you get a SECURITY_ERR exception loading images it probably means that
+you're serving the tests from a local origin and your browser doesn't allow you
+to read local files. In chromium, run with --allow-file-access-from-files.
 
 ### Contact ###
 

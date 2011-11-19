@@ -27,21 +27,23 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
+  var rect = meta.math.rect;
+
   var expand = function(rect1, rect2) {
-    var l1 = rect1.x, l2 = rect2.x,
-        t1 = rect1.y, t2 = rect2.y,
-        r1 = rect1.x + rect1.w, r2 = rect2.x + rect2.w,
-        b1 = rect1.y + rect1.h, b2 = rect2.y + rect2.h;
+    var l1 = rect1[0], l2 = rect2[0],
+        t1 = rect1[1], t2 = rect2[1],
+        r1 = rect1[0] + rect1[2], r2 = rect2[0] + rect2[2],
+        b1 = rect1[1] + rect1[3], b2 = rect2[1] + rect2[3];
     var top = Math.min(t1, t2),
         bottom = Math.max(b1, b2),
         right = Math.max(r1, r2),
         left = Math.min(l1, l2);
-    return {
-      x: left,
-      y: top,
-      w: right - left,
-      h: bottom - top
-    };
+    return [
+      left,
+      top,
+      right - left,
+      bottom - top
+    ];
   };
 
   var least_expansion = function(children, rect) {
@@ -52,7 +54,7 @@
         };
         });
     var bestnode = expanded.sortBy(function(node) {
-        return node.newrect.w * node.newrect.h;
+        return node.newrect[2] * node.newrect[3];
         })[0];
     return {
       child: bestnode.noderef,
@@ -72,6 +74,7 @@
   /**
    * Print something to debug with.
    */
+  /*
   RTree.prototype.debug = function(w, h, layer, scale) {
     var top = !layer;
     layer = layer || new meta.Layer(void 0, {w: w, h: h});
@@ -100,12 +103,13 @@
       return layer.canvas;
     }
   };
+  */
 
   RTree.prototype.query = function(f, remove) {
     var hits = [],
         merged = [];
 
-    if (meta.def(this.data)) {
+    if (this.data) {
       this.data.forEach(function(d, idx, array) {
           if (!f.call(void 0, d.rect)) return;
           hits.push(d.object);
@@ -115,7 +119,7 @@
       return hits;
     }
 
-    if (meta.undef(this.children))
+    if (!this.children)
       return [];
 
     children.forEach(function(c) {
@@ -128,7 +132,7 @@
 
   RTree.prototype.search = function(rect, remove) {
     var f = function(r) {
-      return r.intersect(rect);
+      return meta.math.rect.intersect(r, rect);
     };
     return this.query(f, remove);
   };
@@ -139,7 +143,7 @@
 
   RTree.prototype.find = function(rect, remove) {
     var f = function(r) {
-      return r.sameAs(rect);
+      return meta.math.rect.equal(r, rect);
     };
     return this.query(f, remove);
   };
@@ -150,7 +154,7 @@
 
   RTree.prototype.searchInside = function(rect, remove) {
     var f = function(r) {
-      return r.containedBy(rect);
+      return meta.math.rect.containedBy(r, rect);
     };
     return this.query(f, remove);
   };
@@ -161,7 +165,7 @@
 
   RTree.prototype.searchOutside = function(rect, remove) {
     var f = function(r) {
-      return !r.intersect(rect);
+      return !meta.math.rect.intersect(r, rect);
     };
     return this.query(f, remove);
   };

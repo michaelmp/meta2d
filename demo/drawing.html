@@ -1,0 +1,120 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>meta2d.js Cacheing Demo #1</title>
+</head>
+<body>
+  
+<div id="demo"></div>
+
+<noscript>
+You will need to enable Javascript to run this demo.
+</noscript>
+
+<script type="text/javascript" src="meta2d.js"></script>
+<script type="text/javascript">
+
+document.addEventListener('DOMContentLoaded',
+function() {
+  // This demonstration introduces the Layer.draw method. The draw method takes
+  // a drawing as an argument. And it does not appear on the screen until the
+  // layer has rendered the drawing to its backbuffer and flips buffers.
+  //
+  // You should have already read layer.html and entity.html.
+
+  var mcx = new meta2d.MetaContext('demo', {w: 400, h: 300});
+
+  mcx.save();
+  mcx.translate(50, 50);
+  mcx.rotate(Math.PI/4);
+  var d = mcx.makeDrawing(50, 50);
+  mcx.restore();
+
+  // A drawing is an object with two properties:
+  //   ctx : A new Context for a hidden canvas with the specified width and
+  //         height in makeDrawing.
+  //
+  //   transform : The [a, b, c, d, e, f] values that define the transformation
+  //               matrix.
+  //
+  // You make a drawing from a layer (here, we use the default active layer),
+  // and this sets transform to a copy of the active layer's transformation
+  // matrix.
+  //
+  // d.transform is a matrix representation of the translate and rotate
+  // operations that were on the stack when we made the drawing.
+  // 
+  // d.ctx has its own state, initialized to the identity matrix like any other
+  // Context upon construction.
+  //
+  // The purpose of keeping an individual transform is that we can now treat
+  // d.ctx.canvas as a rectangular bitmap without worrying about where it is
+  // drawn on the screen.
+
+  d.ctx.fillStyle = 'black';
+  d.ctx.fillRect(0, 0, 50, 50);
+
+  // The memo operation sets aside a rectangle in screen coordinates, on which
+  // drawings will be received.
+  //
+  // In Meta2D, the backbuffer is whatever rectangles you specify with memo,
+  // even if they extend beyond the visible screen.
+
+  mcx.memo(50, 0, 350, 300);
+  mcx.memo(0, 0, 50, 85);
+
+  // The draw operation takes a drawing and draws it onto memo-ed regions after
+  // applying the drawing's transform property to the current transformation
+  // matrix.
+  //
+  // Note that because memo takes screen coordinates without consideration for
+  // transformations, the draw command does not take into account the current
+  // transformation state, only the drawing's transform.
+  //
+  // So mcx.translate(5000, 5000) right here would not affect mcx.draw(d)
+  // because d has already copied the transform.
+
+  mcx.draw(d);
+
+  // The term "flip" typically means to swap buffers in a traditional multi-
+  // buffer rendering pipeline. Here, our buffers are radically different:
+  //
+  //   - The backbuffer is a set of canvases at arbitrary locations specified
+  //     by memo().
+  //
+  //   - The frontbuffer is a single canvas apppended to the HTML document when
+  //     the layer is created.
+  //
+  // The flip operation copies any backbuffer "blocks" that intersect with
+  // the frontbuffer canvas using the 'copy' globalCompositeOperation. It is
+  // therefore unspecified what happens when you memo overlapping blocks
+  // (although this will usually just cause redundant work).
+
+  mcx.flip(0, 0, 400, 300);
+
+  // If you're wondering why the backbuffer is allowed to extend beyond the
+  // bounds of the frontbuffer, a later demonstration will show how to pan
+  // around those offscreen blocks with a layer camera.
+
+  // The output should look like a diamond with the bottom-left corner cut out:
+  //
+  // +------------+
+  // |            |
+  // |   #        |
+  // |  ###       |
+  // | #####      |
+  // |   ##       |
+  // |   #        |
+  // |            |
+  // |            |
+  // +------------+
+
+  // Further reading:
+  //   Now that we know how to use drawings, we're going to look at performance
+  //   improvements on our double-buffer system in cache1.html.
+})
+
+</script>
+
+</body>
+</html>

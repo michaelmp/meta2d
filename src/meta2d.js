@@ -133,6 +133,11 @@
     return (0.5 + val) << 0;
   };
 
+  /** Convert an array into a string */
+  var serialize = function(array) {
+    return array.join(',');
+  };
+
   // Modifiable Types
   var CollisionType = function() {},
       ProjectionType = function() {},
@@ -160,6 +165,7 @@
     rand: rand,
     randInt: randInt,
     round: round,
+    serialize: serialize,
     CollisionType: CollisionType,
     ProjectionType: ProjectionType,
     TweenType: TweenType

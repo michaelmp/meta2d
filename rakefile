@@ -9,7 +9,7 @@
 =end
 
 directory "build"
-directory "doc"
+directory "doc/api"
 directory "jsmin/bin"
 
 # Order matters:
@@ -71,9 +71,9 @@ task :compress => [:merge, :minify] do
 end
 
 desc "Build the documentation."
-task :document => [:merge, 'doc'] do
+task :document => [:merge, 'doc/api'] do
   puts "Parsing comments to build HTML documentation..."
-  sh "cat 'build/meta2d.js' | ./doc.py > doc/index.html"
+  sh "cat 'build/meta2d.js' | ./doc.py > doc/api/index.html"
   puts "Done documenting."
   puts ""
 end

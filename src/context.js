@@ -42,6 +42,8 @@
    * @param h
    */
   var Context = function(w, h) {
+    if (!w || !h || w < 0 || h < 0)
+      throw new meta.exception.InvalidParameterException();
     var ctx_ = this,
         canvas_ = document.createElement('canvas'),
         nativeCtx_,
@@ -166,7 +168,7 @@
     };
 
     this.transform = function(a, b, c, d, e, f) {
-      matrix_ = meta.math.affine.transform[matrix_, [a, b, c, d, e, f]];
+      matrix_ = meta.math.affine.transform(matrix_, [a, b, c, d, e, f]);
       return CanvasRenderingContext2D.prototype.transform
         .apply(nativeCtx_, arguments);
     };

@@ -27,11 +27,20 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
+  var datum_val = function(datum) {
+    return datum.val;
+  };
+
   /**
    * @class RCache
    * A cache of rectangle-keyed data, allowing for
    * intersection-based lookups while maintaining a limited
    * number of entries.
+   */
+
+  /**
+   * @constructor
+   * @param size
    */
   var RCache = function(size) {
     var rcache_ = this,
@@ -39,61 +48,98 @@
         lru_ = new meta.LRU(size || 16);
 
     this.add = function(rect, val) {
-      var dropped = lru_.add(meta.serialize(rect), val);
+      var key = meta.serialize(rect);
 
-      dropped.forEach(function(v) {
-          rtree_.findAndRemove(v.rect);
-          });
-      if (dropped.length) {
-        rtree_.findAndRemove(rect);
-        rtree_.insert(rect, val);
-      }
+      // Only proceed if key is not present in cache.
+      if (lru_.get(key)) return [];
 
-      return this;
+      return this.update(rect, val);
     };
 
     this.get = function(rect) {
-      return lru_.get(rect);
+      var datum = lru_.get(meta.serialize(rect));
+
+      if (!datum) return null;
+
+      return datum.val;
     };
 
     this.update = function(rect, val) {
-      var dropped = lru_.update(meta.serialize(rect), val);
+      var key = meta.serialize(rect),
+          rect = rect.slice(0),
+          datum = {rect: rect, val: val},
+          dropped = lru_.add(key, datum);
 
-      dropped.forEach(function(v) {
-          rtree_.findAndRemove(v.rect);
+      // Make sure any dropped data are removed from the rtree.
+      dropped.forEach(function(d) {
+          rtree_.findAndRemove(d.rect);
           });
-      rtree_.findAndRemove(rect);
-      rtree_.insert(rect, val);
 
-      return this;
+      // Update the rtree by removing old rect
+      rtree_.findAndRemove(rect);
+      rtree_.insert(rect, datum);
+
+      return dropped.map(datum_val);
     };
 
     this.pluck = function(rect) {
-      lru_.pluck(meta.serialize(rect));
+      var hit = lru_.pluck(meta.serialize(rect));
+
       rtree_.findAndRemove(rect);
 
-      return this;
+      return [hit].map(datum_val);
     };
 
     this.pluckInside = function(rect) {
-      var hits = rtree_.searchInside(rect);
+      var hits = rtree_.searchInsideAndRemove(rect);
 
-      hits.forEach(function(v) {
-          rcache_.pluck(v.rect);
+      hits.forEach(function(d) {
+          lru_.pluck(meta.serialize(d.rect))
           });
 
-      return this;
+      return hits.map(datum_val);
     };
 
     this.pluckOutside = function(rect) {
-      var hits = rtree_.searchOutside(rect);
+      var hits = rtree_.searchOutsideAndRemove(rect);
 
-      hits.forEach(function(v) {
-          rcache_.pluck(v.rect);
+      hits.forEach(function(d) {
+          lru_.pluck(meta.serialize(d.rect));
           });
 
-      return this;
+      return hits.map(datum_val);
     };
+
+    this.search = function(rect) {
+      var hits = rtree_.search(rect);
+
+      hits.forEach(function(d) {
+          lru_.update(meta.serialize(d.rect), d.val);
+          });
+
+      return hits.map(datum_val);
+    };
+
+    this.searchInside = function(rect) {
+      var hits = rtree_.searchInside(rect);
+
+      hits.forEach(function(d) {
+          lru_.update(meta.serialize(d.rect), d.val);
+          });
+
+      return hits.map(datum_val);
+    };
+
+    this.searchOutside = function(rect) {
+      var hits = rtree_.searchOutside(rect);
+
+      hits.forEach(function(d) {
+          lru_.update(meta.serialize(d.rect), d.val);
+          });
+
+      return hits.map(datum_val);
+    };
+
   };
 
   meta.mixSafely(meta, {RCache: RCache});

@@ -33,6 +33,32 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   };
 
+  var get_bounds = function(drawing) {
+    var t = drawing.transform,
+        x1 = 0,
+        y1 = 0,
+        x2 = 0,
+        y2 = drawing.ctx.canvas.height,
+        x3 = drawing.ctx.canvas.width,
+        y3 = drawing.ctx.canvas.height,
+        x4 = drawing.ctx.canvas.width,
+        y4 = 0,
+        x1T = t[0] * x1 + t[2] * y1 + t[4],
+        y1T = t[1] * x1 + t[3] * y1 + t[5],
+        x2T = t[0] * x2 + t[2] * y2 + t[4],
+        y2T = t[1] * x2 + t[3] * y2 + t[5],
+        x3T = t[0] * x3 + t[2] * y3 + t[4],
+        y3T = t[1] * x3 + t[3] * y3 + t[5],
+        x4T = t[0] * x4 + t[2] * y4 + t[4],
+        y4T = t[1] * x4 + t[3] * y4 + t[5],
+        top = meta.min(y1T, y2T, y3T, y4T),
+        bottom = meta.max(y1T, y2T, y3T, y4T),
+        left = meta.min(x1T, x2T, x3T, x4T),
+        right = meta.max(x1T, x2T, x3T, x3T);
+
+    return [left, top, right - left, bottom - top];
+  };
+
   /**
    * @class Layer
    */
@@ -55,34 +81,61 @@
         ctx_ = new meta.Context(
             (options && options.w), (options && options.h));
 
+    // Allow entity and child entites to draw directly.
+    // @return array of all drawings.
+    var recursive_render = function(e) {
+      var drawings = [],
+          children = e.children || [],
+          d;
+
+      // TODO: Sort children by z
+      children = children.sort();
+
+      // Transformations do not affect sibling entities.
+      ctx_.save();
+
+      // Apply entity transformations.
+      if (e.pos) ctx_.translate(e.pos[0], e.pos[1]);
+      if (meta.def(e.angle)) ctx_.rotate(e.angle);
+      if (meta.def(e.zoom)) ctx_.scale(e.zoom, e.zoom);
+
+      d = e.ondraw.call(e.model, ctx_, layer_);
+      if (d) drawings.push(d);
+
+      // Recurse on any children.
+      children.forEach(function(e) {
+          drawings = drawings.concat(render_entity(e));
+          });
+
+      ctx_.restore();
+
+      return drawings;
+    }
+
     /**
      * @method render
-     * @param rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [Layer]
      */
-    this.render = function(rect) {
-      var es = rtree_.search(rect).concat(entities_),
+    this.render = function(x, y, w, h) {
+      var es = rtree_.search([x, y, w, h]).concat(entities_),
           drawings = [];
       
-      // Sort entities by their z-index
+      // TODO: Sort entities by z
       es = es.sort();
 
       // Call each entity's ondraw method, allowing direct rendering onto
       // canvas, or return a drawing to use with cache.
       es.forEach(function(e) {
-          var d;
-          if (e.draw) {
-            drawings.push(e.draw);
-          } else if (e.ondraw) {
-            ctx_.save();
-            if (e.pos) ctx_.translate(e.pos[0], e.pos[1]);
-            d = e.ondraw.call(e.model, ctx_, layer_);
-            if (d) drawings.push(d);
-            ctx_.restore();
-          }
+          drawings = drawings.concat(recursive_render(e));
           });
 
-      // Draw drawings onto cache blocks.
+      // Draw drawings onto any memo blocks.
       drawings.forEach(function(d) {
           layer_.draw(d);
           });
@@ -93,11 +146,23 @@
     /**
      * @method makeDrawing
      *
+     * @param ctx
+     *
      * @return [Drawing]
      */
     this.makeDrawing = function() {
+      var ctx;
+
+      if (arguments.length === 2) {
+        ctx = new meta.Context(arguments[0], arguments[1]);
+      } else if (arguments.length === 1) {
+        ctx = arguments[0];
+      } else {
+        throw new meta.exception.InvalidParameterException();
+      }
+
       return {
-        ctx: new meta.Context(),
+        ctx: ctx,
         transform: ctx_.getTransform()
       };
     };
@@ -109,14 +174,12 @@
      *  thisArg
      */
     this.draw = function(d) {
-      var bound = void 0;
+      var bound = get_bounds(d);
 
       memos_.search(bound).forEach(function(b) {
-          var itx = b.rect.intersect(d.rect);
-          if (!itx) return;
-
           b.ctx.save();
-          b.ctx.setTransform(t);
+          b.ctx.translate(-b.rect[0], -b.rect[1]);
+          b.ctx.transform.apply(b.ctx.transform, d.transform);
           b.ctx.drawImage(d.ctx.canvas, 0, 0);
           b.ctx.restore();
           });
@@ -126,42 +189,54 @@
 
     /**
      * @method memo
-     * @param rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [Layer]
      *  thisArg
      */
-    this.memo = function(rect) {
-      var newctx = new meta.Context();
-      newctx.translate(-rect.x, -rect.y);
+    this.memo = function(x, y, w, h) {
+      var rect = [x, y, w, h];
+
       memos_.add(rect, {
-        ctx: new meta.Context(),
+        ctx: new meta.Context(rect[2], rect[3]),
         rect: rect
       });
+
       return this;
     };
 
     /**
      * @method flip
-     * @param rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [meta::Layer]
      */
-    this.flip = function(rect) {
+    this.flip = function(x, y, w, h) {
+      var rect = [x, y, w, h]
       memos_.search(rect).forEach(function(b) {
-          var itx = b.rect.intersect(rect);
+          var itx = meta.math.rect.intersect(b.rect, rect);
           if (!itx) return;
           ctx_.save();
           identity_matrix(ctx_);
           ctx_.globalCompositeOperation = 'copy';
           ctx_.drawImage(
             b.ctx.canvas,
-            itx.x - b.rect.x,
-            itx.y - b.rect.y,
-            itx.w,
-            itx.h,
-            itx.x - rect.x,
-            itx.y - rect.y,
-            itx.w,
-            itx.h);
+            itx[0] - b.rect[0],
+            itx[1] - b.rect[1],
+            itx[2],
+            itx[3],
+            itx[0] - rect[0],
+            itx[1] - rect[1],
+            itx[2],
+            itx[3]);
           ctx_.restore();
           });
       return this;
@@ -171,12 +246,19 @@
      * @method erase
      * Erase pixel data onscreen and in cache without removing
      * cache.
-     * @param [meta::math::Rect] rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [meta::Layer]
      */
-    this.erase = function(rect) {
+    this.erase = function(x, y, w, h) {
+      var rect = [x, y, w, h];
+
       memos_.search(rect).forEach(function(b) {
-          b.ctx.clearRect(rect);
+          b.ctx.clearRect.apply(b.ctx, rect);
           });
 
       return this;
@@ -185,13 +267,18 @@
     /**
      * @method prune
      * Removes cache blocks inside of rect.
-     * @param [meta::math::Rect] rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [meta::Layer]
      */
-    this.prune = function(rect) {
-      memos_.searchWithin(rect).forEach(function(b) {
-          memos_.remove(b.rect);
-          });
+    this.prune = function(x, y, w, h) {
+      var rect = [x, y, w, h];
+
+      memos_.pluckInside(rect);
 
       return this;
     };
@@ -199,20 +286,25 @@
     /**
      * @method crop
      * Removes cache blocks that do not intersect with rect.
-     * @param [meta::math::Rect] rect
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [meta::Layer]
      */
-    this.crop = function(rect) {
-      memos_.searchWithout(rect).forEach(function(b) {
-          memos_.remove(b.rect);
-          });
+    this.crop = function(x, y, w, h) {
+      var rect = [x, y, w, h];
+
+      memos_.pluckOutside(rect);
 
       return this;
     };
 
     /**
      * @method resize
-     *  Change the size of the layer. While preserving the bitmap and
+     *  Change the size of the layer while preserving the bitmap and
      *  transformation matrix. Other state is lost, including the stack.
      *
      * @param w
@@ -331,11 +423,17 @@
     /**
      * @method reindex
      * Index any unindexed entities by their bounding logic.
-     * @param rect
-     * A [meta2d::math::Rect].
+     *
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     *
      * @return [meta2d::Context]
      */
-    this.reindex = function(rect) {
+    this.reindex = function(x, y, w, h) {
+      var rect = [x, y, w, h];
+
       if (meta.undef(rect))
         throw new meta.exception.
           InvalidParameterException('rect', rect);

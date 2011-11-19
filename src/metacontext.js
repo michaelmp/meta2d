@@ -256,10 +256,9 @@
       
       var style = canvas_ ?
         '' :
-        'width: ' + w + 'px;' +
-        'height: ' + w + 'px;' +
+        'width: ' + w + 'px; ' +
+        'height: ' + h + 'px; ' +
         'position: relative;';
-
 
       parent_.setAttribute('style', style);
 
@@ -274,8 +273,7 @@
     var defer_to_layer = function(method) {
       var f = function() {
         var layer = getActiveLayer_();
-        layer[method].apply(layer, arguments);
-        return this;
+        return layer[method].apply(layer, arguments);
       };
       this[method] = f.bind(this);
     };
@@ -311,7 +309,9 @@
       'parallax',
       'z',
       'index',
-      'reindex'
+      'reindex',
+      'makeDrawing',
+      'getContext'
     ].forEach(defer_to_layer, this);
 
     [ // Rendering methods on all layers.
