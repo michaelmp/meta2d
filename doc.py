@@ -36,9 +36,10 @@ import sys
 ############ Begin HTML generator ############
 
 DOC_HTML = {
-    'object': '<article> <h1> %(label) </h1> <p> %(description) </p> <p> %(contained) </p> </article>',
-    'constructor': '<section> <h2> Constructor </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
-    'method': '<section> <h2> %(label) </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
+    'object': '<article id="%(label)"> <h1 class="object"> %(label) %(inheritance) </h1> <p> %(description) </p> <p> %(contained) </p> </article>',
+    'inheritance': '<div class="inheritance"> &sup; %(label) </div>',
+    'constructor': '<section> <h2 class="method"> Constructor </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
+    'method': '<section> <h2 class="method"> %(label) </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
     'param': '<div class="param"> <div class="param_type"> &larr; %(label) </div> <div class="param_desc"> %(description) </div> </div>',
     'return': '<div class="return"> div class="return_type"> &rarr; %(label) </div> <div class="return_desc"> %(description) </div> </div>',
     'everything': """
@@ -47,33 +48,53 @@ DOC_HTML = {
 <link rel="stylesheet" href="style.css" type="text/css" />
 </head>
 <body>
-%(contained)
+<div class="toc"> %(toc) </div>
+<div class="api"> %(contained) </div>
 </body>
 </html>
 """
 }
 
 DOC_HTML_TAGS = {
-    '--&#62;': '&rarr;',
-    '[code]': '<code>',
-    '[/code]': '</code>',
-    '[p]': '<p>',
-    '[/p]': '</p>',
-    '[url]': '<a href="">',
-    '[/url]': '</a>'
+    '-->': '&rarr;',
+    '<--': '&larr;',
+    '<<': '&lt;',
+    '>>': '&gt;',
 }
+
+def build_html_toc():
+  html = '<h1 class="content"> Table of Contents </h1>'
+
+  html += '<h2 class="content"> Classes </h2>'
+  for c in sorted(namespace['class'].values(),
+        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
+    l = c.getLabel().split(':')[0]
+    html += '<a href="#' + l + '" class="content">' + l + '</a>'
+
+  html += '<h2 class="content"> Mixins </h2>'
+  for m in sorted(namespace['mixin'].values(),
+        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
+    l = m.getLabel().split(':')[0]
+    html += '<a href="#' + l + '" class="content">' + l + '</a>'
+
+  return html
 
 class HTMLVisitor:
   def visit(self, o):
     if o.getType() not in DOC_HTML:
       return ''
-    l = o.getLabel().replace('<', '&#60;').replace('>',  '&#62;')
-    d = o.getDescription().replace('<', '&#60;').replace('>',  '&#62;')
+    l = o.getLabel()
+    d = o.getDescription()
     c = ' '.join([self.visit(c) for c in o.getContained()])
+    i = ' '.join([self.visit(i) for i in o.getInheritance()]) \
+        if o.getType() == 'object' else ''
     sanitized = DOC_HTML[o.getType()] \
+      .replace('%(toc)', build_html_toc()) \
       .replace('%(label)', l) \
       .replace('%(description)', d) \
-      .replace('%(contained)', c)
+      .replace('%(contained)', c) \
+      .replace('%(inheritance)', i)
+        
     for t in DOC_HTML_TAGS:
       sanitized = sanitized.replace(t, DOC_HTML_TAGS[t])
     return sanitized
@@ -81,7 +102,7 @@ class HTMLVisitor:
 ############ End HTML generator ############
 
 METHOD_ANNOTATIONS = ['param', 'return']
-OBJECT_ANNOTATIONS = ['method', 'constructor']
+OBJECT_ANNOTATIONS = ['method', 'constructor', 'extends']
 namespace = {'class': {}, 'mixin': {}}
 focus = None
 method_focus = None
@@ -127,7 +148,7 @@ class Param(Visited):
   def getContained(self):
     return []
 
-class Return(Param):
+class Return(Visited):
   def incorporate_annotation(self, a):
     if a[0] == 'return':
       self.label = a[1]
@@ -184,14 +205,26 @@ class Constructor(Method):
       p.incorporate_annotation(a)
       self.params.append(p)
 
+class Implements(Visited):
+  def getType(self):
+    return 'inheritance'
+
+  def incorporate_annotation(self, a):
+    if a[0] == 'extends':
+      self.label = a[1]
+
 class Object(Visited):
   def __init__(self):
     Visited.__init__(self)
     self.constructor = None
+    self.inheritance = []
 
   def incorporate_annotation(self, a):
     global method_focus
     if a[0] == 'class':
+      self.label = a[1]
+      self.description = a[2]
+    elif a[0] == 'mixin':
       self.label = a[1]
       self.description = a[2]
     elif a[0] == 'method':
@@ -204,6 +237,13 @@ class Object(Visited):
       c.incorporate_annotation(a)
       self.constructor = c
       method_focus = c
+    elif a[0] == 'extends':
+      i = Implements()
+      i.incorporate_annotation(a)
+      self.inheritance.append(i)
+
+  def getInheritance(self):
+    return self.inheritance
 
   def getType(self):
     return 'object'
@@ -248,7 +288,7 @@ def annotation_to_representation(a):
   if not a[0]:
     return
 
-  if a[0] == 'class':
+  if a[0] == 'class' or a[0] == 'mixin':
     if a[1] not in namespace[a[0]]:
       namespace[a[0]][a[1]] = Object()
     focus = namespace[a[0]][a[1]]

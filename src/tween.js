@@ -30,11 +30,20 @@
   var no_frame = function() {return {};};
 
   /**
-   * @class Tween : Modifiable<TweenType>
+   * @class Tween
+   *  <p>
+   *  A base class for interpolation rules. A Tween uses keyframes in an
+   *  animation to determine intermediate frames.
+   *  </p>
+   *  
+   * @extends Modifiable<<TweenType>>
    */
 
   /**
    * @constructor
+   *  <p>
+   *  Instantiates a base class with an abstract <i>fix</i> method.
+   *  </p>
    */
   var Tween = function() {
     meta.Modifiable.call(this, new meta.TweenType());
@@ -42,10 +51,26 @@
 
   /**
    * @method fix
-   * @abstract
-   * @param [meta2d::Segment] seg
-   * @param [Object] ...
-   * @return function(Number t) --> [meta2d::Frame]
+   *  <p><i>Abstract</i>.</p>
+   *  
+   *  <p>
+   *  Fix takes a timeframe and potentially keyframe data and returns a
+   *  function that given a time <i>t</i> returns an interpolated frame.
+   *  </p>
+   *
+   *  <p>
+   *  For example, smooth linear interpolation requires two keyframes, while
+   *  a bezier curve interpolates between two keyframes, but may require
+   *  additional frames as control points.
+   *  </p>
+   *
+   * @param seg
+   *  An Array<<Number>>[2] of starting and ending times.
+   *
+   * @param keyframes...
+   *  A variable number of Object arguments.
+   *
+   * @return Function
    */
   Tween.prototype.fix = function() {
     throw new meta.exception.InvokedAbstractMethodException();

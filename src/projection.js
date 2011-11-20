@@ -29,29 +29,62 @@
 
   /**
    * @class Projection
-   *  : Mofiable<ProjectionType>
+   *  <p>
+   *  A base class for projecting a vector onto another vector space. The
+   *  prototypical example is converting a 2d or 3d coordinate space into a 2d
+   *  coordinate space via isometric projection.
+   *  </p>
    *
-   * A projection takes a vector and maps it into another. The prototypical
-   * example is converting a 2d or 3d coordinate space into a 2d coordinate
-   * space via isometric projection.
+   *  <p>
+   *  A forward projection applies the projection.
+   *  </p>
    *
-   * A forward projection applies the projection.
-   * A reverse projection undoes the projection.
+   *  <p>
+   *  A reverse projection undoes the projection.
+   *  </p>
+   *
+   * @extends Modifiable<<ProjectionType>>
    */
 
-  // @constructor
+  /**
+   * @constructor
+   *  Instantiates a base Projection class with abstract <i>forward/reverse</i>
+   *  methods.
+   */
   var Projection = function() {
     meta.Modifiable.call(this, new meta.ProjectionType());
   };
 
-  // @abstract
-  // @method forward
+  /**
+   * @method forward
+   *  <p><i>Abstract</i>.</p>
+   *
+   *  <p>
+   *  Projects a vector onto a target space.
+   *  </p>
+   *
+   * @param v
+   *  An N-dimensional vector represented as an Array<<Number>>[N].
+   *
+   * @return Array<<Number>>
+   */
   Projection.prototype.forward = function(v) {
     throw new meta.exception.InvokedAbstractMethodException();
   };
 
-  // @abstract
-  // @method reverse
+  /**
+   * @method reverse
+   *  <p><i>Abstract</i>.</p>
+   *
+   *  <p>
+   *  If determinable, reverses the projection.
+   *  </p>
+   *
+   * @param v
+   *  An N-dimensional vector represented as an Array<<Number>>[N].
+   *
+   * @return Array<<Number>>
+   */
   Projection.prototype.reverse = function(v) {
     throw new meta.exception.InvokedAbstractMethodException();
   };

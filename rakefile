@@ -1,11 +1,11 @@
 =begin
   A basic build script for meta2d.js.
-  Includes jsmin and gzip target options (on by default).
 
   How to use this build script:
     (1) Install rake for your system.
     (2) Run `rake' in your terminal.
     (3) All builds are output to `build' directory.
+
 =end
 
 directory "build"

@@ -29,10 +29,20 @@
 
   /**
    * @class LRU
+   *  <p>
+   *  A least-recently-used cache implementation.
+   *  </p>
+   *  
+   *  <p>
+   *  All operations are &theta;(1) runtime unless otherwise specified.
+   *  </p>
+   */
+
+  /**
+   * @constructor
    *
-   * A least-recently-used cache implementation.
-   * All operations are constant runtime.
-   * @param capacity the maximum number of stored items.
+   * @param capacity
+   *  The maximum number of (key, value) pairs stored in the cache.
    */
   var LRU = function(capacity) {
     var map = {}; // key --> node
@@ -127,7 +137,16 @@
     };
 
     /**
-     * @return val | null
+     * @method get
+     *  <p>
+     *  Retrieve a value associated with its key, or null if the (key, value)
+     *  pair is not present.
+     *  </p>
+     *
+     * @param key
+     *  A String or Number.
+     * 
+     * @return Object
      */
     this.get = function(key) {
       var node = map[key];
@@ -139,7 +158,19 @@
     };
 
     /**
-     * @return [Array]
+     * @method pluck
+     *  <p>
+     *  Remove the (key, value) pair associated with the given key.
+     *  </p>
+     *
+     *  <p>
+     *  Returns an array of the removed value.
+     *  </p>
+     *
+     * @param key
+     *  A String or Number.
+     *
+     * @return Array[1]
      */
     this.pluck = function(key) {
       var node = map[key],
@@ -151,9 +182,24 @@
     };
 
     /**
-     * Sets or overwrites the value associated with key. Size count increases
-     * up to capacity iff the key was not already present.
-     * @return [Array]
+     * @method update
+     *  <p>
+     *  Sets or overwrites the value associated with key. Size count increases
+     *  up to capacity iff the key was not already present.
+     *  </p>
+     *
+     *  <p>
+     *  Returns an array of the least-recent values beyond the cache capacity
+     *  that were dropped.
+     *  </p>
+     *
+     * @param key
+     *  A String or Number.
+     *
+     * @param val
+     *  Any Object.
+     *
+     * @return Array
      */
     this.update = function(key, val) {
       // Retrieve old node if it exists, or make a new one.
@@ -169,24 +215,29 @@
     };
 
     /**
-     * Will not overwrite existing value.
-     * @return [Array]
+     * @method add
+     *  <p>
+     *  Store a (key, value) pair if no value is already present for the key.
+     *  </p>
+     *
+     *  <p>
+     *  Returns an array of the least-recent values beyond the cache capacity
+     *  that were dropped.
+     *  </p>
+     *
+     * @param key
+     *  A String or Number.
+     *
+     * @param val
+     *  Any Object.
+     *
+     * @return Array
      */
     this.add = function(key, val) {
       if (map[key]) return [];
       return this.update(key, val);
     };
 
-    /**
-     * Print the list of values.
-     */
-    this.debug = function(head) {
-      if (node.next) {
-        return node.val + ' ' + this.debug(node.next);
-      } else {
-        return node.val;
-      }
-    }
   };
 
   meta.mixSafely(meta, {LRU: LRU});

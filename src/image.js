@@ -30,13 +30,29 @@
   /**
    * @class Image
    *
+   * <p>
    * Load an HTML image of any MIME type the UA can handle & extract the pixels
    * as RGBA data. The image automatically loads upon construction.
+   * </p>
    *
-   * Note that the image must be served from an approved origin. Read:
-   *  [url] http://www.w3.org/TR/html5/the-canvas-element.html
-   *    #security-with-canvas-elements [/url]
-   *  [url] http://www.w3.org/TR/cors/ [/url]
+   * <p>
+   * Note that the image must be served from an approved origin. For more
+   * information, read:
+   * </p>
+   * 
+   * <p>
+   * [1]
+   * <a href="http://www.w3.org/TR/html5/the-canvas-element.html#security-with-
+   * canvas-elements">
+   * http://www.w3.org/TR/html5/the-canvas-element.html#security-with-canvas-elements
+   * </a>
+   * </p>
+   *
+   * <p>
+   * [2]
+   * <a href="http://www.w3.org/TR/cors/">
+   * http://www.w3.org/TR/cors/ </a>
+   * </p>
    */
 
   /**
@@ -95,11 +111,9 @@
 
     /**
      * @method load
+     *  Starts the image download & processes pixel data once it's received.
      *
-     * Start the image download & process pixel data once it's received.
-     *
-     * @return [Image]
-     *  thisArg
+     * @return Image
      */
     this.load = function() {
       dummy_.src = src_;
@@ -108,8 +122,9 @@
 
     /**
      * @method getHTMLImage
+     *  Returns an object suitable for Context2D's drawImage method.
      *
-     * @return [HTMLImage]
+     * @return HTMLImageElement
      */
     this.getHTMLImage = function() {
       return dummy_;
@@ -117,8 +132,10 @@
 
     /**
      * @method getCanvas
+     *  Returns a canvas with the same size as the image and its bitmap
+     *  equivalent to the image.
      *
-     * @return [HTMLCanvas]
+     * @return HTMLCanvasElement
      */
     this.getCanvas = function() {
       return canvas_;
@@ -126,9 +143,9 @@
     
     /**
      * @method getWidth
+     *  Returns the width of the image in pixels.
      *
-     * @return [Number]
-     *  The width of the image in pixels.
+     * @return Number
      */
     this.getWidth = function() {
       return w_;
@@ -136,9 +153,9 @@
 
     /**
      * @method getHeight
+     *  Returns the height of the image in pixels.
      *
-     * @return [Number]
-     *  The height of the image in pixels.
+     * @return Number
      */
     this.getHeight = function() {
       return h_;
@@ -146,14 +163,14 @@
 
     /**
      * @method getPixel
+     *  Returns an array of RGBA integer values in [0, 255].
      *
      * @param x
      *  The column index.
      * @param y
      *  The row index.
      *
-     * @return [Array<Number>]
-     *  An array of the RGBA values as one byte each.
+     * @return Array<<Number>>[4]
      */
     this.getPixel = function(x, y) {
       var idx = 4 * ((y * w_) + x);

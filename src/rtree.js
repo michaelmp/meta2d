@@ -64,6 +64,16 @@
 
   /**
    * @class RTree
+   *  <p>
+   *  A rectangular spatial index. All operations are <i>O</i>(logN) expected
+   *  runtime and worst-case <i>O</i>(N) unless otherwise specified.
+   *  </p>
+   *
+   *  <p>
+   *  [1]
+   *  <a href="http://en.wikipedia.org/wiki/Rtree">
+   *  http://en.wikipedia.org/wiki/Rtree</a>
+   *  </p>
    */
   var RTree = function (capacity) {
     this.children; // [{rtree, rect}], not kept by leaf nodes
@@ -72,39 +82,25 @@
   };
 
   /**
-   * Print something to debug with.
+   * @method query
+   *  <p>
+   *  Query walks through the tree for all nodes that filter true through a
+   *  function <i>f</i>.
+   *  </p>
+   *
+   *  <p>
+   *  Returns a flattened array of all filtered values.
+   *  </p>
+   *
+   * @param f
+   *  A filtering Function that returns a Boolean given a node value.
+   *
+   * @param remove
+   *  <i>Optional</i>. A Boolean indicating whether filtered nodes should be
+   *  removed from the tree.
+   *
+   * @return Array
    */
-  /*
-  RTree.prototype.debug = function(w, h, layer, scale) {
-    var top = !layer;
-    layer = layer || new meta.Layer(void 0, {w: w, h: h});
-    if (scale) layer.context.scale(scale, scale);
-    if (this.children) {
-      this.children.forEach(function(child) {
-          child.rtree.debug(w, h, layer, void 0);
-          layer.context.strokeStyle = 'rgba(0,0,255,0.2)';
-          layer.context.lineWidth = 1;
-          layer.context.strokeRect(child.rect.x,
-            child.rect.y,
-            child.rect.w,
-            child.rect.h);
-          });
-    }
-    if (this.data) {
-      this.data.forEach(function(datum) {
-          layer.context.fillStyle = 'rgba(255,0,0,0.2)';
-          layer.context.fillRect(datum.rect.x,
-            datum.rect.y,
-            datum.rect.w,
-            datum.rect.h);
-          });
-    }
-    if (top) {
-      return layer.canvas;
-    }
-  };
-  */
-
   RTree.prototype.query = function(f, remove) {
     var hits = [],
         merged = [];
@@ -130,6 +126,21 @@
     return merged;
   };
 
+  /**
+   * @method search
+   *  <p>
+   *  Returns a flattened array of all node values in the tree that are indexed
+   *  by rectangles intersecting with <i>rect</i>.
+   *  </p>
+   *
+   * @param rect
+   *  An Array<<Number>>[4] of [x, y, w, h] values to search over.
+   *
+   * @param remove
+   *  <i>Optional</i>. If true, will remove any nodes within <i>rect</i>.
+   *
+   * @return Array
+   */
   RTree.prototype.search = function(rect, remove) {
     var f = function(r) {
       return meta.math.rect.intersect(r, rect);
@@ -137,10 +148,21 @@
     return this.query(f, remove);
   };
 
-  RTree.prototype.searchAndRemove = function(rect) {
-    return this.search(rect, true);
-  };
-
+  /**
+   * @method find
+   *  <p>
+   *  Returns a flattened array of all node values in the tree that are indexed
+   *  by <i>rect</i>.
+   *  </p>
+   *
+   * @param rect
+   *  An Array<<Number>>[4] of [x, y, w, h] values to search over.
+   *
+   * @param remove
+   *  <i>Optional</i>. If true, will remove any nodes indexed by <i>rect</i>.
+   *
+   * @return Array
+   */
   RTree.prototype.find = function(rect, remove) {
     var f = function(r) {
       return meta.math.rect.equal(r, rect);
@@ -148,10 +170,21 @@
     return this.query(f, remove);
   };
 
-  RTree.prototype.findAndRemove = function(rect) {
-    return this.find(rect, true);
-  };
-
+  /**
+   * @method searchInside
+   *  <p>
+   *  Returns a flattened array of all node values in the tree that are indexed
+   *  by rectangles strictly contained by <i>rect</i>.
+   *  </p>
+   *
+   * @param rect
+   *  An Array<<Number>>[4] of [x, y, w, h] values to search over.
+   *
+   * @param remove
+   *  <i>Optional</i>. If true, will remove any nodes within <i>rect</i>.
+   *
+   * @return Array
+   */
   RTree.prototype.searchInside = function(rect, remove) {
     var f = function(r) {
       return meta.math.rect.containedBy(r, rect);
@@ -159,10 +192,21 @@
     return this.query(f, remove);
   };
 
-  RTree.prototype.searchInsideAndRemove = function(rect) {
-    return this.searchInside(rect, true);
-  };
-
+  /**
+   * @method searchOutside
+   *  <p>
+   *  Returns a flattened array of all node values in the tree that are indexed
+   *  by rectangles non-intersecting with <i>rect</i>.
+   *  </p>
+   *
+   * @param rect
+   *  An Array<<Number>>[4] of [x, y, w, h] values to search over.
+   *
+   * @param remove
+   *  <i>Optional</i>. If true, will remove any nodes outside of <i>rect</i>.
+   *
+   * @return Array
+   */
   RTree.prototype.searchOutside = function(rect, remove) {
     var f = function(r) {
       return !meta.math.rect.intersect(r, rect);
@@ -170,19 +214,29 @@
     return this.query(f, remove);
   };
 
-  RTree.prototype.searchOutsideAndRemove = function(rect) {
-    return this.searchOutside(rect, true);
-  };
-
   /**
-   * If child nodes do not exist:
-   *   If capacity is reached, creates capacity # child nodes and inserts
-   *   each child into a separate node.
-   *   Else: adds key,val into children array
-   * Child nodes exist:
-   *   Chooses a child to receive {key, object}, expanding its bounds, and
-   *   recursively inserting.
+   * @method insert
+   *  <p>
+   *  Add <i>object</i> to the tree at the index <i>rect</i>.
+   *  </p>
+   *
+   * @param rect
+   *  An Array<<Number>>[4] of [x, y, w, h] values to use as an index.
+   *
+   * @param object
+   *  The value to associate (non-uniquely) with <i>rect</i>.
    */
+  
+  // Algorithm:
+  //
+  // If child nodes do not exist:
+  //   If capacity is reached, creates capacity # child nodes and inserts
+  //   each child into a separate node.
+  //   Else: adds key,val into children array
+  // Child nodes exist:
+  //   Chooses a child to receive {key, object}, expanding its bounds, and
+  //   recursively inserting.
+
   RTree.prototype.insert = function(rect, object) {
     // Defer to child that needs least expansion of its bounds.
     if (this.children) {
@@ -217,11 +271,11 @@
           });
       this.data = undefined;
 
-      return true;
+      return;
     }
 
     // Tree was unchanged.
-    return false;
+    return;
   };
 
   meta.mixSafely(meta, {RTree: RTree});

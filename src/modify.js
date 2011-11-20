@@ -30,22 +30,67 @@
   /**
    * @mixin Modifiable
    */
+
+  /**
+   * @constructor
+   *  <p>
+   *  Adds the <i>modify</i> method to the contextual object.
+   *  </p>
+   *
+   * @param type
+   *  A class indicating the acceptable type of Modifiers on this object.
+   */
   var Modifiable = function(type) {
+    /**
+     * @method modify
+     *  <p>
+     *  Applies a Modifier to the object. Throws an exception if the modifier
+     *  is not an acceptable type.
+     *  </p>
+     *
+     * @param modifier
+     *  A Modifier to alter this object.
+     *
+     * @return Object
+     */
     this.modify = function(modifier) {
-        if (!(type instanceof modifier.substrate))
-          throw new meta.exception.InvalidTemplateException();
-        modifier.modify(this);
-        return this;
-        };
+      if (!(type instanceof modifier.substrate))
+        throw new meta.exception.InvalidTemplateException();
+      modifier.modify(this);
+      return this;
+    };
   };
 
   /**
    * @mixin Modifier
    */
+
+  /**
+   * @constructor
+   *  <p>
+   *  Adds the abstract <i>modify</i> method to the contextual object.
+   *  </p>
+   *
+   * @param substrate
+   *  A class indicating the acceptable type of Modifiable objects this can
+   *  modify.
+   */
   var Modifier = function(substrate) {
     this.substrate = substrate;
-    // @abstract
-    this.modify = function() {
+
+    /**
+     * @method modify
+     *  <p><i>Abstract</i>.</p>
+     *
+     *  <p>
+     *  Modify takes a Modifiable object and overwrites any number of methods
+     *  as composed functions.
+     *  </p>
+     *
+     * @param modifiable
+     *  A Modifiable object to alter.
+     */
+    this.modify = function(modifiable) {
       throw new meta.exception.InvokedAbstractMethodException();
     };
   };
