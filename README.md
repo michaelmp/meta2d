@@ -55,7 +55,12 @@ a battery of unit tests.
 
 If you get a SECURITY_ERR exception loading images it probably means that
 you're serving the tests from a local origin and your browser doesn't allow you
-to read local files. In chromium, run with --allow-file-access-from-files.
+to read local files where the same-origin policy applies (here, getImageData).
+
+In chromium, run with --allow-file-access-from-files.
+
+In firefox, go to about:config and change security.fileuri.strict_origin_policy
+to false.
 
 ### Contact ###
 

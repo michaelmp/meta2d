@@ -9,7 +9,7 @@
     var e = document.createElement('div');
     e.innerHTML = msg;
     output.appendChild(e);
-    setTimeout(void 0, 0);
+    setTimeout(function() {}, 0);
   };
 
   this.printBitmap = function(ctx) {
@@ -53,7 +53,7 @@
   this.spin = function(sec) {
     var start = new Date().getTime();
     while (new Date().getTime() - start < sec * 1000) {
-      setTimeout(void 0, 0);
+      setTimeout(function() {}, 0);
     }
   };
 

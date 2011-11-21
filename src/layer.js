@@ -219,6 +219,28 @@
      *
      * @return [meta::Layer]
      */
+
+    // I would like to use 'copy' here but FF does not respecting the clipping
+    // region in composite operations.
+    //
+    // 24 May '11
+    // hixie: "They are to be applied as part of the drawing model, at which
+    // point the clipping region is also applied. (Without a clipping region,
+    // these operators act on the whole bitmap with every operation)."
+    // http://dev.w3.org/html5/2dcontext/Overview.html#compositing
+    //
+    // 22 Oct '11
+    // roc@moz: "It's crystal clear that what we currently implement is what
+    // the spec currently requires."
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=366283
+    //
+    // By my reading, Chrome is wrong because they take the destination
+    // rect as an implicit clipping region, even though it is not part of
+    // the drawing model.
+    //
+    // FF is also wrong, because the clipping region has no effect for copy
+    // and several other composition types.
+    //
     this.flip = function(x, y, w, h) {
       var rect = [x, y, w, h]
       memos_.search(rect).forEach(function(b) {
@@ -226,7 +248,12 @@
           if (!itx) return;
           ctx_.save();
           identity_matrix(ctx_);
-          ctx_.globalCompositeOperation = 'copy';
+          ctx_.clearRect(
+            itx[0] - rect[0],
+            itx[1] - rect[1],
+            itx[2],
+            itx[3]);
+          ctx_.globalCompositeOperation = 'source-over';
           ctx_.drawImage(
             b.ctx.canvas,
             itx[0] - b.rect[0],
