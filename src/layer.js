@@ -29,10 +29,6 @@
 
   var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
 
-  var identity_matrix = function(ctx) {
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-  };
-
   var get_bounds = function(drawing) {
     var t = drawing.transform,
         x1 = 0,
@@ -54,9 +50,17 @@
         top = meta.min(y1T, y2T, y3T, y4T),
         bottom = meta.max(y1T, y2T, y3T, y4T),
         left = meta.min(x1T, x2T, x3T, x4T),
-        right = meta.max(x1T, x2T, x3T, x3T);
+        right = meta.max(x1T, x2T, x3T, x4T);
 
     return [left, top, right - left, bottom - top];
+  };
+
+  var mask = function(e, x, y) {
+    if (e.mask) return e.mask.overlaps.call(void 0, x, y);
+    if (!e.onmask) return false;
+    var m = e.onmask.call(e);
+    if (!m) return false;
+    return m.overlaps.call(void 0, x, y);
   };
 
   /**
@@ -70,6 +74,9 @@
    * @param options
    */
   var Layer = function(mcx, options) {
+    if (!options || !options.w || !options.h)
+      throw new meta.exception.InvalidParameterException();
+
     var layer_ = this,
         entities_ = [],
         parallax_ = (options && options.parallax) || 1,
@@ -78,18 +85,17 @@
         treehash_ = {},
         zorder_ = (options && options.z) || 0,
         memos_ = new meta.RCache((options && options.rblocks)),
-        ctx_ = new meta.Context(
-            (options && options.w), (options && options.h));
+        ctx_;
 
     // Allow entity and child entites to draw directly.
-    // @return array of all drawings.
+    // Return array of all drawings to render()
     var recursive_render = function(e) {
       var drawings = [],
           children = e.children || [],
           d;
 
-      // TODO: Sort children by z
-      children = children.sort();
+      children = meta.zsort(children);
+      children.reverse();
 
       // Transformations do not affect sibling entities.
       ctx_.save();
@@ -99,8 +105,12 @@
       if (meta.def(e.angle)) ctx_.rotate(e.angle);
       if (meta.def(e.zoom)) ctx_.scale(e.zoom, e.zoom);
 
-      d = e.ondraw.call(e.model, ctx_, layer_);
-      if (d) drawings.push(d);
+      if (e.draw) {
+        drawings.push(e.draw);
+      } else if (e.ondraw) {
+        d = e.ondraw.call(e.model, ctx_, layer_);
+        if (d) drawings.push(d);
+      }
 
       // Recurse on any children.
       children.forEach(function(e) {
@@ -120,14 +130,14 @@
      * @param w
      * @param h
      *
-     * @return [Layer]
+     * @return Layer
      */
     this.render = function(x, y, w, h) {
       var es = rtree_.search([x, y, w, h]).concat(entities_),
           drawings = [];
       
-      // TODO: Sort entities by z
-      es = es.sort();
+      es = meta.zsort(es);
+      es.reverse();
 
       // Call each entity's ondraw method, allowing direct rendering onto
       // canvas, or return a drawing to use with cache.
@@ -148,7 +158,7 @@
      *
      * @param ctx
      *
-     * @return [Drawing]
+     * @return Drawing
      */
     this.makeDrawing = function() {
       var ctx;
@@ -161,26 +171,35 @@
         throw new meta.exception.InvalidParameterException();
       }
 
-      return {
+      var o ={
         ctx: ctx,
-        transform: ctx_.getTransform()
+        transform: ctx_.getTransform(),
       };
+      o.getBounds = function() {return get_bounds(o)};
+
+      return o;
     };
 
     /**
      * @method draw
      * @param drawing
-     * @return [Layer]
+     * @return Layer
      *  thisArg
      */
     this.draw = function(d) {
-      var bound = get_bounds(d);
+      var bound = d.getBounds();
 
       memos_.search(bound).forEach(function(b) {
           b.ctx.save();
+
+          // Draw to block-local coordinates.
           b.ctx.translate(-b.rect[0], -b.rect[1]);
-          b.ctx.transform.apply(b.ctx.transform, d.transform);
+
+          // Apply the drawing's transformation.
+          b.ctx.transform.apply(b.ctx, d.transform);
+
           b.ctx.drawImage(d.ctx.canvas, 0, 0);
+
           b.ctx.restore();
           });
 
@@ -195,7 +214,7 @@
      * @param w
      * @param h
      *
-     * @return [Layer]
+     * @return Layer
      *  thisArg
      */
     this.memo = function(x, y, w, h) {
@@ -217,7 +236,7 @@
      * @param w
      * @param h
      *
-     * @return [meta::Layer]
+     * @return Layer
      */
 
     // I would like to use 'copy' here but FF does not respecting the clipping
@@ -242,17 +261,28 @@
     // and several other composition types.
     //
     this.flip = function(x, y, w, h) {
-      var rect = [x, y, w, h]
+      var rect = [x, y, w, h];
+
       memos_.search(rect).forEach(function(b) {
           var itx = meta.math.rect.intersect(b.rect, rect);
           if (!itx) return;
+
+          // Make sure flipped edges are consistent.
+          itx = itx.map(meta.round);
+
           ctx_.save();
-          identity_matrix(ctx_);
+
+          // Ignore the transformation state in use by user.
+          ctx_.setTransform.apply(ctx_, meta.math.affine.identity());
+
+          // Erase the target area.
           ctx_.clearRect(
-            itx[0] - rect[0],
-            itx[1] - rect[1],
+            itx[0],
+            itx[1],
             itx[2],
             itx[3]);
+
+          // Copy the source area.
           ctx_.globalCompositeOperation = 'source-over';
           ctx_.drawImage(
             b.ctx.canvas,
@@ -260,32 +290,39 @@
             itx[1] - b.rect[1],
             itx[2],
             itx[3],
-            itx[0] - rect[0],
-            itx[1] - rect[1],
+            itx[0],
+            itx[1],
             itx[2],
             itx[3]);
+
           ctx_.restore();
           });
+
       return this;
     };
 
     /**
      * @method erase
-     * Erase pixel data onscreen and in cache without removing
-     * cache.
+     * Erase pixel data in memos.
      *
      * @param x
      * @param y
      * @param w
      * @param h
      *
-     * @return [meta::Layer]
+     * @return Layer
      */
     this.erase = function(x, y, w, h) {
       var rect = [x, y, w, h];
 
       memos_.search(rect).forEach(function(b) {
-          b.ctx.clearRect.apply(b.ctx, rect);
+          var itx = meta.math.rect.intersect(b.rect, rect);
+          if (!itx) return;
+          b.ctx.clearRect(
+            meta.round(itx[0] - b.rect[0]),
+            meta.round(itx[1] - b.rect[1]),
+            meta.round(itx[2]),
+            meta.round(itx[3]));
           });
 
       return this;
@@ -303,6 +340,11 @@
      * @return [meta::Layer]
      */
     this.prune = function(x, y, w, h) {
+      if (arguments.length < 4) {
+        memos_ = new meta.RCache((options && options.rblocks));
+        return this;
+      }
+
       var rect = [x, y, w, h];
 
       memos_.pluckInside(rect);
@@ -343,11 +385,26 @@
      *  thisArg
      */
     this.resize = function(w, h) {
-      var t = ctx_.getTransform(),
-          bitmap = ctx_.canvas;
+      var t, bitmap;
+
+      // Remove the old canvas from the DOM.
+      if (ctx_) {
+        parent_.removeChild(ctx_.canvas);
+        t = ctx_.getTransform(),
+        bitmap = ctx_.canvas;
+      }
+
+      // Create a new canvas & context, copying old bitmap & transform
+      // if possible.
       ctx_ = new meta.Context(w, h);
-      ctx_.drawImage(bitmap, 0, 0);
-      ctx_.setTransform(t);
+      if (bitmap) ctx_.drawImage(bitmap, 0, 0);
+      if (t) ctx_.setTransform.apply(ctx_, t);
+
+      // Reassert the old z-order in the new canvas style.
+      this.z(this.z());
+
+      // Insert new canvas into the DOM.
+      parent_.appendChild(ctx_.canvas);
     };
 
     /**
@@ -371,13 +428,34 @@
     this.put = function(e) {
       if (!e) throw new meta.exception.InvalidParameterException();
       if (e.bound) {
-        this.rtree.insert(e.bound, e);
+        rtree_.insert(e.bound, e);
       } else if (e.onbound) {
-        this.rtree.insert(e.onbound.call(e), e);
+        rtree_.insert(e.onbound.call(e), e);
       } else {
         entities_.push(e);
       }
       return this;
+    };
+
+    /**
+     * @method pick
+     *  Returns an array of entities that overlap the given Context-relative
+     *  pixel coordinates, as determined by their <i>onmask</i> property.
+     *
+     * @param x
+     *  The relative distance from the left of the contained Context.
+     *
+     * @param y
+     *  The relative distance from the top of the contained Context.
+     *
+     * @return Array
+     */
+    this.pick = function(x, y) {
+      // TODO, offset by camera.
+      var es = rtree_.search([x, y, 1, 1]).concat(entities_);
+      var filtered = es.filter(
+          (function(e) {return mask(e, x, y);}).bind(void 0));
+      return filtered;
     };
 
     /**
@@ -438,9 +516,10 @@
     this.index = function() {
       var es = this.getUnindexedEntities();
       es.forEach(function(e, idx, array) {
-          if (!('bound' in e)) return;
-          e.data.bound = e.bound.call(e);
-          rtree_.insert(e.data.bound, e);
+          var b = e.bound;
+          if (!b && e.onbound) b = e.onbound.call(e.model);
+          if (!b) return;
+          rtree_.insert(b, e);
           delete array[idx];
           }, this);
       this.setUnindexedEntities(es.filter(meta.def));
@@ -493,8 +572,9 @@
       return this;
     };
 
-    // Insert this layer's main canvas into the DOM.
-    parent_.appendChild(ctx_.canvas);
+    // Create a canvas and insert it into the DOM.
+    this.resize(options.w, options.h);
+
   };
 
   meta.mixSafely(meta, {

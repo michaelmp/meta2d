@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>meta2d.js Mouse Demo</title>
+</head>
+<body style="margin:0;">
+  
+<div id="demo"></div>
+
+<noscript>
+You will need to enable Javascript to run this demo.
+</noscript>
+
+<script type="text/javascript" src="meta2d.js"></script>
+<script type="text/javascript">
+
+var loaded = 0;
+
+document.addEventListener('DOMContentLoaded',
+
+function() {
+  // This demonstration assumes that you have read cache1.html and are
+  // comfortable with drawings.
+  //
+  // We're going to use drawings as a way of providing an alpha-masked
+  // bitmap to the MetaContext during mouse events.
+  //
+  // We will invert the drawing's transform to send the mouse coordinates
+  // to bitmap coordinates and check whether the bitmap is opaque at that
+  // pixel.
+
+  var mcx = new meta2d.MetaContext('demo',
+    {w: window.innerWidth, h: window.innerHeight});
+
+  for (var i = 0; i < 30; i++) {
+    mcx.put('star');
+  }
+
+  var hue = 0;
+  var star = function(points) {
+    var cx = new meta2d.Context(200, 200);
+    cx.translate(100, 100);
+    cx.moveTo(0, 100);
+    for (var n = 0; n < points; n++) {
+      cx.save();
+      cx.lineTo(0, 100);
+      cx.rotate(Math.PI / points);
+      cx.lineTo(0, 50);
+      cx.restore();
+      cx.rotate(2 * Math.PI / points);
+    }
+    hue = (hue + 5) % 360;
+    cx.fillStyle = 'hsla(' + hue + ', 80%, 70%, 1)';
+    cx.fill();
+    return cx;
+  };
+
+  mcx.select('star').forEach(function(e) {
+    // Scatter stars around the window.
+
+    e.pos = [meta2d.rand() * mcx.getWidth(), meta2d.rand() * mcx.getHeight()];
+
+    // Rotate each star by a random amount.
+
+    e.angle = 2 * Math.PI * meta2d.rand();
+
+    // Scale each star by a random amount.
+
+    e.zoom = 0.25 + 0.75 * meta2d.rand();
+
+    // Entities are rendered low to high, and mouseover high to low.
+
+    e.z = meta2d.randInt(1, 100);
+
+    e.model = {
+      points: meta2d.randInt(3, 9)
+    };
+
+    e.ondraw = function(cx, layer) {
+      return e.draw = layer.makeDrawing(star(this.points));
+    };
+
+    // This is called whenever the layer attempts to pick() entities at a
+    // point (x, y), such mouse events.
+
+    e.onmask = function() {
+      if (e.draw) {
+        return e.mask = meta2d.mask.opaque(e.draw);
+      }
+    };
+
+    // Once we've set a mask, we can listen to click, mousemove, mouseover,
+    // mouseout, etc.
+    //
+    // Here, we will clear the saved drawing and call render/flip in the
+    // local area of the screen, as determined by the drawing's bounding
+    // rectangle computed in getBounds().
+    
+    e.onmousemove = function() {
+      if (!e.draw) return;
+      var bound = e.draw.getBounds();
+      delete e.draw;
+      repaint_stars(bound);
+    };
+  });
+
+  // erase() clears all memos in the backbuffer within the specified (x, y, w, h).
+
+  var repaint_stars = function(rect) {
+    mcx.erase.apply(mcx, rect);
+    mcx.render.apply(mcx, rect);
+    mcx.flip.apply(mcx, rect);
+  };
+
+  mcx.memo(0, 0, mcx.getWidth(), mcx.getHeight());
+  mcx.render(0, 0, mcx.getWidth(), mcx.getHeight());
+  mcx.flip(0, 0, mcx.getWidth(), mcx.getHeight());
+
+  // prune() removes all memos in the active layer.
+  //
+  // This is necessary since we are about to create a new memo that would
+  // overlap the old memo.
+  //
+  // resize() affects all layers and replaces the canvases inserted into the
+  // page with newly sized ones. It is a good idea to redraw the complete
+  // scene after resizing.
+
+  var resize = function() {
+    mcx.prune();
+    mcx.resize(window.innerWidth, window.innerHeight);
+    mcx.memo(0, 0, mcx.getWidth(), mcx.getHeight());
+    repaint_stars([0, 0, mcx.getWidth(), mcx.getHeight()]);
+  };
+
+  window.onresize = resize;
+
+  // As a bonus, let's go one step farther and speed things up.
+  //
+  // You will notice (depending on your browser and hardware) the mouseover
+  // effect demonstrated here begin to slow down as you increase the number of
+  // stars. Note that we are only repainting the smallest necessary region of
+  // the screen (this would be even slower if we were redrawing the entire
+  // scene).
+  //
+  // This is primarily because the mousemove event requires us to check the
+  // masking property of every entity, including time for z sorting.
+  //
+  // This obviously isn't necessary if we know in advance where are entities
+  // are located via a spatial partitioning or similar. Fortunately, every
+  // layer has this functionality.
+
+  // The 'bound' event is internally defined as when the layer would like to
+  // know where an entity is going to be drawn without drawing it.
+  //
+  // Here, the stars are not moving, so we can set .bound and never change it.
+
+  mcx.select('star').forEach(function(e) {
+    e.onbound = function() {
+      if (!e.draw) return;
+      return e.bound = e.draw.getBounds();
+    };
+  });
+
+  // Finally, let's inform the layer that the bound is available and that it
+  // should use the bound whenever possible.
+  //
+  // We do this with the index() method.
+
+  mcx.index();
+
+  // Try running the demo with the index() line commented out to see the
+  // improvement.
+  //
+  // Just to recap, we have many 200x200 pixel bitmaps scattered around a
+  // full screen and we're able to get pretty responsive mouse events.
+  //
+  // Try increasing the number of stars to 50, 100... 500.
+  //
+  // I wrote this demo with the following specs as my benchmark:
+  //  - 2x 1.5GHz netbook, 1GB RAM.
+  //  - Firefox 7 in Debian Linux.
+  //  - 1440x900 external SVGA.
+  //
+  // I was able to run 1000+ stars before getting significant lag in FF.
+  // Chrome was noticeably slower above 500.
+  //
+  // Good performance with index() reflects the density of the entities. If
+  // they're stack on top of each other, then things will be slow. If they're
+  // spread apart, then things will be pretty fast.
+
+  // Further reading:
+  //
+  //   If we were to move our stars around, we would need to update the bounds
+  //   and inform the layer that the old bounds were out of date. This involves
+  //   updating the tree datastructure storing all of these bounds.
+  //
+  //   The reindex(x, y, w, h) method updates any dirty bounds in the specified
+  //   screen area.
+  //
+  //   cache3.html will look at this in greater depth.
+  //
+  // Until then, please read cache2.html to learn more about the backbuffer. In
+  // that demo we will draw offscreen and pan around using a camera.
+
+});
+
+</script>
+
+</body>
+</html>

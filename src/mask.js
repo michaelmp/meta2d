@@ -1,4 +1,4 @@
-/** collision.js
+/** mask.js
  *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
  * 
  *      This file is part of Meta2D.
@@ -27,44 +27,53 @@
   var meta = root.meta2d;
   if (!meta) throw 'Could not find main namespace.';
 
-  // functions that take a rect arg and return true/false
-  
-  // always collides
-  var always = function() {
-    return function() {return true;};
+  /**
+   * @class Mask
+   *
+   * @extends Modifiable<<MaskType>>
+   */
+  var Mask = function() {
+    meta.Modifiable.call(this, new meta.MaskType());
   };
 
-  // never collides
-  var never = function() {
-    return function() {return false;};
+  /**
+   * @method overlaps
+   *  <p>
+   *  <i>Abstract</i>.
+   *  </p>
+   * @param x
+   * @param y
+   * @return Boolean
+   */
+  Mask.prototype.overlaps = function(x, y) {
+    throw new meta.exception.InvokedAbstractMethodException();
   };
 
-  // rectangle intersection
-  var bbox = function(rect) {
-    var f = function(r) {
-      return meta.math.rect.intersect(rect, r);
+  var opaque = function(d) {
+    var o = function() {};
+
+    o.prototype = new Mask();
+
+    o.prototype.overlaps = function(x, y) {
+      if (meta.math.affine.isSingular(d.transform))
+          return false;
+
+      var t = d.transform,
+          t_inv = meta.math.affine.invert(t),
+          pixel = meta.math.affine.applyToVector(t_inv, [x, y]);
+
+      return d.ctx.getImageData(pixel[0], pixel[1], 1, 1).data[3] > 0;
     };
-    return f;
+
+    return new o();
   };
 
-  // drawing is {ctx, transform}
-  var alpha = function(d) {
-    var f = function (r) {
-      var t = meta.math.affine.transform(
-              [1, 0, 0, 1, r[0], r[1]],
-              d.transform);
-          x = t[4],
-          y = t[5];
-      return d.ctx.canvas.getImageData(x, y, 1, 1).data[3] > 0;
-    };
-    return f;
-  };
+  meta.mixSafely(meta, {
+    Mask: Mask
+  });
 
-  meta.collision = meta.declareSafely(meta.collision, {
-    always: always,
-    never: never,
-    bbox: bbox,
-    alpha: alpha,
+  meta.mask = meta.declareSafely(meta.mask, {
+    opaque: opaque
   });
 
 }).call(this);

@@ -99,7 +99,7 @@
      */
     this.camera = function(pos) {
       if (!pos) return cameraPos_
-      return cameraPos_ = pos;
+      return cameraPos_ = pos.slice(0);
     };
 
     /**
@@ -111,7 +111,7 @@
      */
     this.cursor = function(pos) {
       if (!pos) return cursorPos_;
-      return cursorPos_ = pos
+      return cursorPos_ = pos.slice(0);
     };
 
     /**
@@ -123,18 +123,6 @@
      *  Optional. An Object providing additional parameters.
      *
      *  [ul]
-     *  [li] pos - A [Vector] describing the entity's position. [/li]
-     *  [li] bound - A [Rect] describing the entity's bounding geometry. [/li]
-     *  [li] model - An [Object] to use as a context for event callbacks. [/li]
-     *  [li] mask [/li]
-     *  [li] draw [/li]
-     *  [li] onmask [/li]
-     *  [li] onproject [/li]
-     *  [li] ondraw [/li]
-     *  [li] onbound [/li]
-     *  [li] onclick [/li]
-     *  [li] onmouseover [/li]
-     *  [li] onmouseout [/li]
      *  [li] onmousemove [/li]
      *  [/ul]
      *
@@ -254,6 +242,9 @@
       if (meta.undef(w) || meta.undef(h))
         throw new meta.exception.InvalidParameterException();
       
+      w_ = w;
+      h_ = h;
+
       var style = canvas_ ?
         '' :
         'width: ' + w + 'px; ' +
@@ -283,7 +274,7 @@
         var args = arguments;
         Object.keys(layers_).forEach(function(l) {
             layers_[l][method.slice(0, -3)].apply(layers_[l], args)
-            });
+             });
       };
       this[method] = f.bind(this);
     };
@@ -404,30 +395,69 @@
         enumerable: true
         });
 
+    /**
+     * @method getAllLayers
+     * @return Array<<Layer>>
+     */
+    this.getAllLayers = function() {
+      return Object.keys(layers_).map(function(k) {return layers_[k];});
+    };
+
+    // pick() method concats all layer output.
+    /**
+     * @method pick
+     *  Returns an array of all entities from all layers that overlap the point
+     *  relative to MetaContext left/top in the page.
+     *
+     * @param x
+     *
+     * @param y
+     *
+     * @return Array
+     */
+    this.pick = function(x, y) {
+      return this.getAllLayers()
+        .map(function(layer) {return layer.pick(x, y);})
+        .reduce(function(a, b) {return a.concat(b);});
+    };
+
     this.resize(w_, h_);
     node.appendChild(parent_);
     layers_['default'] = new meta.Layer(this, options);
     
-    var mouse_screen_pos = function(event) {
-      return [
-        event.pointerX() - parent_.WTFBBQ.get('left'),
-        event.pointerY() - parent_.WTFBBQ.get('top')
-      ];
+    var position = function(element) {
+      if (!element.offsetParent) return [0, 0];
+      return meta.math.vector.plus(
+          position(element.offsetParent),
+          [element.offsetLeft, element.offsetTop]);
     };
 
-    var handle_click = function(event) {
-      var topEntity = high_z_entity_at_pos(pos);
-      if (!top) return;
-      if (meta.undef(top.click)) return;
+    var mouse_pos = function(event) {
+      var offset = position(parent_),
+          mouse = [event.pageX, event.pageY];
+      return meta.math.vector.minus(mouse, offset);
+    }
 
-      top.onclick.call(top);
+    var handle_click = function(event) {
+      var mouse = mouse_pos(event),
+          hits = meta.zsort(this.pick.apply(this, mouse));
+
+      if (!hits.length) return;
+
+      var top = hits[0];
+      if (!top.onclick) return;
+
+      top.onclick.call(top.model, event);
     };
 
     var handle_mousemove = function(event) {
-      var pos = mouse_screen_pos(event),
-          top = high_z_entity_at_pos(pos);
+      var mouse = mouse_pos(event),
+          hits = meta.zsort(this.pick.apply(this, mouse)),
+          top;
 
-      this.cursor(pos);
+      if (hits.length) top = hits[0];
+
+      this.cursor(mouse);
 
       // trigger mouseout event
       if (top != focus_ && focus_ && focus_.onmouseout)
@@ -444,8 +474,10 @@
       focus_ = top;
     };
 
-    // TODO: observe click, mousemove events.
-    
+    parent_.addEventListener('click', handle_click.bind(this));
+    //parent_.addEventListener('mousedown');
+    //parent_.addEventListener('mouseup');
+    parent_.addEventListener('mousemove', handle_mousemove.bind(this));
 
   };
 

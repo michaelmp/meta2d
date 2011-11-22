@@ -20,7 +20,7 @@ sourcefiles = [
   "src/math/rect.js",
   "src/math/vector.js",
   "src/animation.js",
-  "src/collision.js",
+  "src/mask.js",
   "src/context.js",
   "src/image.js",
   "src/layer.js",

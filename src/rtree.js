@@ -53,8 +53,9 @@
           noderef: node
         };
         });
-    var bestnode = expanded.sortBy(function(node) {
-        return node.newrect[2] * node.newrect[3];
+    var bestnode = expanded.sort(function(n1 ,n2) {
+        return meta.math.rect.area(n1.newrect) -
+               meta.math.rect.area(n2.newrect);
         })[0];
     return {
       child: bestnode.noderef,
@@ -118,7 +119,7 @@
     if (!this.children)
       return [];
 
-    children.forEach(function(c) {
+    this.children.forEach(function(c) {
         if (!f.call(void 0, c.rect)) return;
         merged = merged.concat(c.rtree.query(f, remove));
         });

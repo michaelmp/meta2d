@@ -110,6 +110,13 @@
     return ret;
   };
 
+  /** Sort an array of entities by their 'z' attribute' */
+  var zsort = function(array) {
+    return array.sort(function(a, b) {
+        return  (b.z || -Infinity) - (a.z || -Infinity);
+        });
+  };
+
   /** Get the runtime in milliseconds */
   var time = (function() {
     var start = new Date().getTime();
@@ -139,7 +146,7 @@
   };
 
   // Modifiable Types
-  var CollisionType = function() {},
+  var MaskType = function() {},
       ProjectionType = function() {},
       TweenType = function() {};
 
@@ -161,12 +168,13 @@
     min: min,
     idx: index,
     zip: zip,
+    zsort: zsort,
     time: time,
     rand: rand,
     randInt: randInt,
     round: round,
     serialize: serialize,
-    CollisionType: CollisionType,
+    MaskType: MaskType,
     ProjectionType: ProjectionType,
     TweenType: TweenType
   });

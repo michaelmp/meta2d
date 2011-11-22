@@ -100,12 +100,11 @@ function() {
   // If we need to, we can always delete e.draw and e.ondraw will be called
   // again.
   //
-  // So using the "draw" property is the first way that we can improve
-  // performance.
+  // So using the "draw" property instead of ondraw is the first way that we
+  // can improve performance.
 
-  // OK back to work.
-  //
-  // Let's draw a hundred stars with some variations and cache all of them.
+  // Alright back to work. Let's draw a hundred stars with some variations and
+  // cache all of them.
 
   mcx.layer('distant').z(2);
 
@@ -136,9 +135,9 @@ function() {
         cache.add(size, scx);
       }
       
-      return (hit && layer.makeDrawing(hit)) || star;
+      return e.draw = (hit && layer.makeDrawing(hit)) || star;
     }
-  })
+  });
 
   // There's a lot going on in there so let's go through it.
   // 
@@ -208,8 +207,12 @@ function() {
   var move_clouds = function() {
     mcx.select('cloud').forEach(function(e) {
       e.pos[0] += 0.1;
+
       if (e.pos[0] > 800) e.pos[0] = -200;
+
+      delete e.draw; // Force a new call to ondraw.
     });
+
     mcx.layer('foreground');
     mcx.erase(0, 0, 800, 300);
     mcx.render(0, 0, 800, 300);
@@ -219,6 +222,10 @@ function() {
   setInterval(move_clouds, 100);
 
   var twinkle_stars = function() {
+    mcx.select('star').forEach(function(e) {
+      delete e.draw;
+    });
+
     mcx.layer('distant');
     mcx.erase(0, 0, 800, 300);
     mcx.render(0, 0, 800, 300);

@@ -1,16 +1,25 @@
+/**
+ * Tests the integrity of loaded RGB & RGBA PNG files.
+ *
+ * This test fails in Firefox on account of sub-pixel rendering affecting
+ * all colors ([255, 0, 0] becomes [240, 0, 37] for example). 
+ */
+
 document.addEventListener('DOMContentLoaded',
 (function() {
 
   var image1, image2;
 
+  var root = this;
+
   var loadfail = function() {
-    this.printheader('meta2d::Image');
+    root.printheader('meta2d::Image');
     assert('Could not load images.');
     summarize();
   };
 
   var f = function() {
-    this.printheader('meta2d::Image');
+    root.printheader('meta2d::Image');
 
     // use vector equivalence for color comparison
     var same = meta2d.math.vector.equal;
@@ -39,9 +48,9 @@ document.addEventListener('DOMContentLoaded',
   };
   
   var f2 = function() {
-    image2 = new meta2d.Image('RGBcolors.png', false, f.bind(this), loadfail.bind(this));
+    image2 = new meta2d.Image('RGBcolors.png', false, f, loadfail);
   };
-  image1 = new meta2d.Image('RGBAcolors.png', false, f2.bind(this), loadfail.bind(this));
+  image1 = new meta2d.Image('RGBAcolors.png', false, f2, loadfail);
 
 
 }).bind(this));

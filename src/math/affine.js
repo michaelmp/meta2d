@@ -86,13 +86,47 @@
     return [1, 0, 0, 1, 0, 0];
   };
 
+  // Return determinant of linear submatrix.
+  var det = function(t) {
+    return t[0] * t[3] - t[1] * t[2];
+  };
+
+  // Is the linear submatrix singular? That is, is it non-invertible?
+  var singular = function(t) {
+    return det(t) === 0;
+  };
+
+  // If singular, return identity.
+  var invert = function(t) {
+    if (singular(t)) return identity();
+    var d = det(t),
+        inv = [t[3], -t[1], -t[2], t[0]].map(function(a) {return a / d;}),
+        neg_inv = inv.map(function(a) {return -a;});
+    return inv.concat([
+        neg_inv[0] * t[4] + neg_inv[2] * t[5],
+        neg_inv[1] * t[4] + neg_inv[3] * t[5]
+        ]);
+  };
+
+  // Apply transformation to a vector.
+  var applyToVector = function(t, v) {
+    return [
+      t[0] * v[0] + t[2] * v[1] + t[4],
+      t[1] * v[0] + t[3] * v[1] + t[5]
+    ];
+  };
+
   meta.math = meta.declareSafely(meta.math);
   meta.math.affine = meta.declareSafely(meta.math.affine, {
     translate: translate,
     scale: scale,
     rotate: rotate,
     transform: transform,
-    identity: identity
+    identity: identity,
+    det: det,
+    isSingular: singular,
+    invert: invert,
+    applyToVector: applyToVector
   });
 
 }).call(this);
