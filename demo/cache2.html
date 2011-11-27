@@ -1,0 +1,285 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js Cacheing Demo #2</title>
+</head>
+<body style="margin: 0; background-color: 'black';">
+
+<div id="demo"></div>
+
+<noscript>
+You will need to enable Javascript to run this demo.
+</noscript>
+
+<script src="meta2d.js"></script>
+<script>
+
+// In this demonstration, we want to draw some entities outside of the screen
+// bounds and have our drawings remembered when we pan the view with a camera.
+//
+// The alternative would be to redraw to the backbuffer whenever we pan,
+// which would be prohibitively slow for fullscreen applications.
+//
+// Our example will be a photo gallery with draggable photos on a draggable
+// backdrop.
+
+document.addEventListener('DOMContentLoaded', function() {
+
+  var photo = new Array(5);
+
+  var mcx = new meta2d.MetaContext('demo', {
+    w: window.innerWidth,
+    h: window.innerHeight
+  });
+
+  var screen,
+      z = 0;
+
+  // In this demo we will only be using a single memo for all of the photos,
+  // and the memo will be larger than the window, as defined in the 'screen'
+  // variable.
+
+  var resize = function() {
+    mcx.prune();
+    mcx.resize(window.innerWidth, window.innerHeight);
+    screen = [
+      -200,
+      -200,
+      mcx.getWidth() + 400,
+      mcx.getHeight() + 400];
+    mcx.memoAll.apply(mcx, screen);
+    mcx.eraseAll.apply(mcx, screen);
+    mcx.renderAll.apply(mcx, screen);
+    mcx.flipAll.apply(mcx, screen);
+  };
+
+
+  // Randomly scatter the photos.
+
+  mcx.z(1);
+
+  [0, 1, 2, 3, 4].forEach(function(n) {
+    mcx.put('photo photo' + n, {
+      model: {id: n},
+      z: z++,
+      pos: [
+        meta2d.randInt(0, mcx.getWidth() - 100),
+        meta2d.randInt(0, mcx.getHeight() - 100)],
+      zoom: 0.25,
+    });
+  });
+
+  mcx.select('photo').forEach(function(e) {
+
+    // Define the drawing for each photo.
+    //
+    // Each photo will display the word "Loading" until the image has been
+    // loaded.
+
+    e.ondraw = function(cx, layer) {
+      var p;
+
+      if (this.model.loaded) {
+        p = new meta2d.Context(photo[this.model.id].getCanvas());
+
+        // Draw a border around the photo. 
+        p.lineWidth = 20;
+        p.strokeStyle = 'black';
+        p.moveTo(0, 0);
+        p.lineTo(p.canvas.width, 0);
+        p.lineTo(p.canvas.width, p.canvas.height);
+        p.lineTo(0, p.canvas.height);
+        p.lineTo(0, 0);
+        p.stroke();
+
+        // Center the image.
+        cx.translate(
+          p.canvas.width * -0.5,
+          p.canvas.height * -0.5);
+
+        this.model.w = p.canvas.width;
+        this.model.h = p.canvas.height;
+
+      } else {
+        p = new meta2d.Context(200, 100);
+
+        p.fillStyle = 'black';
+        p.fillRect(0, 0, 200, 100);
+        p.fillStyle = 'white';
+        p.translate(10, 60);
+        p.font = '40px sans-serif';
+        p.fillText('Loading...', 0, 0);
+
+        this.model.w = 200;
+        this.model.h = 100;
+      }
+
+      return e.draw = layer.makeDrawing(p);
+    };
+
+    // Define the masking behavior so we can listen to mouse events.
+
+    e.onmask = function() {
+      if (e.draw) {
+        return meta2d.mask.opaque(e.draw);
+      }
+    };
+
+    // Only redraw the layer of the relocated photo as necessary.
+
+    var redraw = function() {
+      delete e.draw;
+      mcx.erase.apply(mcx, screen);
+      mcx.render.apply(mcx, screen);
+      mcx.flip.apply(mcx, screen);
+    };
+
+    // We would like the photo to be draggable around the screen.
+    // This event requires an update to the photo's position and repainting.
+
+    e.ondrag = function(x, y, dx, dy) {
+      x = this.pos[0] + dx;
+      x = meta2d.min(x, mcx.getWidth() + 200);
+      x = meta2d.max(x, -200);
+      y = this.pos[1] + dy;
+      y = meta2d.min(y, mcx.getHeight() + 200);
+      y = meta2d.max(y, -200);
+      this.pos = [x, y];
+      redraw();
+    };
+
+    // Let the user zoom in on a photo by double-clicking.
+
+    e.ondblclick = meta2d.toggle(
+      function() {
+        e.zoom = 1;
+        redraw();
+      },
+      function() {
+        e.zoom = 0.25;
+        redraw();
+      });
+
+    // Finally, update the z-order.
+
+    e.onmouseover = function() {
+      this.z = z++;
+      redraw();
+    };
+
+  });
+
+  // Since we memoed a region larger than the screen, let's use it by
+  // assigning a camera value to shift the entire screen, giving us more room
+  // to manipulate our photos.
+  //
+  // When the user drags the background, translate the camera.
+
+  mcx.layer('backdrop').z(0);
+
+  mcx.put('back', {z: 0});
+  mcx.select('back').forEach(function(e) {
+
+    // Draw a radial gradient for the background.
+
+    e.ondraw = function(cx, layer) {
+      var ctx = new meta2d.Context(screen[2], screen[3]);
+      var grad = ctx.createRadialGradient(
+        screen[2] * 0.5, screen[3] * 0.5, 0,
+        screen[2] * 0.5, screen[3] * 0.5, meta2d.min(screen[2], screen[3]));
+      grad.addColorStop(0, '#aaaaaa');
+      grad.addColorStop(1, '#000000');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, screen[2], screen[3]);
+
+      cx.translate(-200, -200);
+
+      return e.draw = layer.makeDrawing(ctx);
+    };
+
+    // The mouse always hits the backdrop if no other entity is in front, so
+    // we can use an all-pass mask that always returns true.
+
+    e.onmask = function() {
+      return meta2d.mask.yes();
+    };
+
+    // Because we have already drawn everything to the backbuffer, we only need
+    // to flip it with a translation determined by the camera.
+    //
+    // To be clear, we do not need to call render before flip when the
+    // rendered data are already in the backbuffer at the flip coordinates.
+
+    var shift = function() {
+      mcx.flipAll(-200, -200, mcx.getWidth() + 200, mcx.getHeight() + 200);
+    };
+
+    // We will define the camera position here.
+    //
+    // The camera affects where we position backbuffer data on a flip,
+    // as well as adjusting screen coordinates for mouse events.
+    //
+    // In general, the camera offsets page coordinates, while entity and
+    // backbuffer coordinates are unaffected by the camera.
+
+    e.ondrag = function(x, y, dx, dy) {
+      x = mcx.camera()[0] - dx;
+      x = meta2d.min(x, 200);
+      x = meta2d.max(x, -200);
+      y = mcx.camera()[1] - dy;
+      y = meta2d.min(y, 200);
+      y = meta2d.max(y, -200);
+      mcx.camera(x, y);
+      shift();
+    };
+  });
+
+  resize();
+  window.onresize = resize;
+
+  var load = function(i) {
+    return function() {
+      mcx.select('photo' + i).forEach(function(e) {
+        e.model.loaded = true;
+        delete e.draw;
+      });
+      mcx.layer('default');
+      mcx.erase.apply(mcx, screen);
+      mcx.render.apply(mcx, screen);
+      mcx.flip.apply(mcx, screen);
+    }
+  }
+
+  // And don't forget to load the photos.
+
+  photo[0] = new meta2d.Image('photo1.jpg', false, load(0));
+  photo[1] = new meta2d.Image('photo2.jpg', false, load(1));
+  photo[2] = new meta2d.Image('photo3.jpg', false, load(2));
+  photo[3] = new meta2d.Image('photo4.jpg', false, load(3));
+  photo[4] = new meta2d.Image('photo5.jpg', false, load(4));
+
+  // Note that in this demo we could have placed each photo on a separate
+  // layer to reduce the amount of rendering work when we drag a photo.
+  //
+  // But this also means that we have a large memo stored for every entity,
+  // and this actually eats up memory very quickly, and certainly wouldn't
+  // scale too well.
+  //
+  // So in this example it is better to use a little more CPU and keep the
+  // memory footprint low. We could also use more discriminating rendering
+  // bounds like we did in mouse.html, but it is sufficient for this demo to
+  // just render & flip the entire screen.
+
+  // Ok we're done!
+  //
+  // In the next demo, we'll go one step further and pan our camera over
+  // an arbitrarily large screen by making a procedurally generated game
+  // world, again using cacheing to keep things manageable.
+
+});
+
+</script>
+
+</body>
+</html>

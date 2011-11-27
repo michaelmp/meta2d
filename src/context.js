@@ -69,20 +69,34 @@
    *  The canvas width in pixels.
    * @param h
    *  The canvas height in pixels.
+   *
+   * @param canvas
+   *  <i>Optional</i>. Instead of constructing with width and height
+   *  parameters, a Context can also be constructed from an HTMLCanvasElement.
    */
   var Context = function(w, h) {
-    if (!w || !h || w < 0 || h < 0)
-      throw new meta.exception.InvalidParameterException();
     var ctx_ = this,
         canvas_ = document.createElement('canvas'),
         nativeCtx_,
         matrix_ = meta.math.affine.identity(),
         stack_ = [matrix_];
-    
-    canvas_.width = w;
-    canvas_.height = h;
+
     canvas_.setAttribute('style', CANVAS_STYLE);
-    nativeCtx_ = canvas_.getContext('2d');
+
+    if (meta.undef(h) && meta.def(w)) {
+      // Parse single argument as a canvas.
+      canvas_.width = w.width;
+      canvas_.height = w.height;
+      nativeCtx_ = canvas_.getContext('2d');
+      nativeCtx_.drawImage(w, 0, 0);
+
+    } else if (!w || !h || w < 0 || h < 0) {
+      throw new meta.exception.InvalidParameterException();
+    } else {
+      canvas_.width = w;
+      canvas_.height = h;
+      nativeCtx_ = canvas_.getContext('2d');
+    }
 
     var get = function(attribute) {
       return nativeCtx_[attribute];

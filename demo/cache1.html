@@ -1,8 +1,9 @@
 <!DOCTYPE HTML>
 <html>
-<head>
-<title>meta2d.js Cacheing Demo #1</title>
-</head>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js Cacheing Demo #1</title>
+  </head>
 <body>
   
 <div id="demo"></div>
@@ -109,7 +110,7 @@ function() {
   mcx.layer('distant').z(2);
 
   for (var i = 0; i < 100; i++) {
-    mcx.put('star', {pos: [800 * meta2d.rand(), 300 * meta2d.rand()]});
+    mcx.put('star', {pos: [meta2d.randInt(0, 800), meta2d.randInt(0, 300)]});
   }
 
   // We expect 11 variations.
@@ -121,7 +122,8 @@ function() {
 
     e.ondraw = function(cx, layer) {
       if (!loaded) return;
-      var size = Math.floor(Math.abs(10 * Math.cos(this.offset++ / 50))) + 1,
+      var size = Math.floor(Math.abs(10 *
+            Math.cos(this.model.offset++ / 50))) + 1,
           hit = cache.get(size);
 
       if (!hit) {
@@ -130,7 +132,7 @@ function() {
         
         scx.translate(45, 45);
         scx.scale(1 / size, 1 / size);
-        scx.drawImage(image.getHTMLImage(), -4.5, -4.5, 9, 9);
+        scx.drawImage(image.getHTMLImage(), -4, -4, 9, 9);
 
         cache.add(size, scx);
       }

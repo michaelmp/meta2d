@@ -95,7 +95,6 @@
           d;
 
       children = meta.zsort(children);
-      children.reverse();
 
       // Transformations do not affect sibling entities.
       ctx_.save();
@@ -108,7 +107,7 @@
       if (e.draw) {
         drawings.push(e.draw);
       } else if (e.ondraw) {
-        d = e.ondraw.call(e.model, ctx_, layer_);
+        d = e.ondraw.call(e, ctx_, layer_);
         if (d) drawings.push(d);
       }
 
@@ -137,7 +136,6 @@
           drawings = [];
       
       es = meta.zsort(es);
-      es.reverse();
 
       // Call each entity's ondraw method, allowing direct rendering onto
       // canvas, or return a drawing to use with cache.
@@ -261,14 +259,14 @@
     // and several other composition types.
     //
     this.flip = function(x, y, w, h) {
-      var rect = [x, y, w, h];
+      var rect = [x + mcx.camera()[0], y + mcx.camera()[1], w, h];
 
       memos_.search(rect).forEach(function(b) {
           var itx = meta.math.rect.intersect(b.rect, rect);
           if (!itx) return;
 
           // Make sure flipped edges are consistent.
-          itx = itx.map(meta.round);
+          itx = itx.map(meta.floor);
 
           ctx_.save();
 
@@ -277,8 +275,8 @@
 
           // Erase the target area.
           ctx_.clearRect(
-            itx[0],
-            itx[1],
+            itx[0] - mcx.camera()[0],
+            itx[1] - mcx.camera()[1],
             itx[2],
             itx[3]);
 
@@ -290,8 +288,8 @@
             itx[1] - b.rect[1],
             itx[2],
             itx[3],
-            itx[0],
-            itx[1],
+            itx[0] - mcx.camera()[0],
+            itx[1] - mcx.camera()[1],
             itx[2],
             itx[3]);
 
@@ -451,7 +449,8 @@
      * @return Array
      */
     this.pick = function(x, y) {
-      // TODO, offset by camera.
+      x += mcx.camera()[0];
+      y += mcx.camera()[1];
       var es = rtree_.search([x, y, 1, 1]).concat(entities_);
       var filtered = es.filter(
           (function(e) {return mask(e, x, y);}).bind(void 0));

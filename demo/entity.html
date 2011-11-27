@@ -1,8 +1,9 @@
 <!DOCTYPE HTML>
 <html>
-<head>
-<title>meta2d.js Entity Demo</title>
-</head>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js Entity Demo</title>
+  </head>
 <body>
   
 <div id="demo"></div>
@@ -57,14 +58,14 @@ function() {
 
   mcx.select('square').forEach(function(e) {
     e.ondraw = function(cx) {
-      cx.fillStyle = this.color;
+      cx.fillStyle = this.model.color;
       cx.fillRect(-25, -25, 50, 50);
     }
   })
 
   mcx.select('circle').forEach(function(e) {
     e.ondraw = function(cx) {
-      cx.fillStyle = this.color;
+      cx.fillStyle = this.model.color;
       cx.arc(0, 0, 25, 0, 2 * Math.PI);
       cx.fill();
     }

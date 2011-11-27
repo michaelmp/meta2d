@@ -78,6 +78,21 @@ task :document => [:merge, 'doc/api'] do
   puts ""
 end
 
+desc "Remove all generated files."
+task :clean do
+  sh """
+    rm -r build ;
+    rm doc/api/index.html ;
+    rm -r jsmin/bin ;
+    rm *~ ;
+    rm src/*~ ;
+    rm src/math/*~ ;
+    rm doc/api/*~ ;
+    rm test/*~ ;
+    rm demo/*~
+    """
+end
+
 desc "Merge, minify, and compress source code."
 task :default => [:merge, :minify, :compress] do
 end

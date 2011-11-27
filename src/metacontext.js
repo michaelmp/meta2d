@@ -40,6 +40,8 @@
    *  An HTML element to append canvases to as child nodes.
    *  If node is a canvas element, will use as single layer.
    *    Additionally, any fallback content can be viewed.
+   *
+   *  Alternatively, a string identifying a node.
    *  
    */
   var MetaContext = function(node, options) {
@@ -56,6 +58,8 @@
         cursorPos_,
         activeLayer_ = 'default',
         focus_ = null,
+        dragged_ = null,
+        mouse_ = [0, 0],
         w_ = options && options.w,
         h_ = options && options.h,
         canvas_ = void 0;
@@ -92,14 +96,15 @@
     /**
      * @method camera
      *
-     * @param pos
-     *  A [Vector] location 
+     * @param x
+     *
+     * @param y
      *
      * @return
      */
-    this.camera = function(pos) {
-      if (!pos) return cameraPos_
-      return cameraPos_ = pos.slice(0);
+    this.camera = function(x, y) {
+      if (meta.undef(x) || meta.undef(y)) return cameraPos_
+      return cameraPos_ = [x, y];
     };
 
     /**
@@ -242,6 +247,9 @@
       if (meta.undef(w) || meta.undef(h))
         throw new meta.exception.InvalidParameterException();
       
+      // Do nothing.
+      if (w_ === w && h_ === h) return this;
+
       w_ = w;
       h_ = h;
 
@@ -413,18 +421,45 @@
      *
      * @param y
      *
+     * @param sorted
+     *
+     * @param layered
+     *
      * @return Array
      */
-    this.pick = function(x, y) {
-      return this.getAllLayers()
-        .map(function(layer) {return layer.pick(x, y);})
-        .reduce(function(a, b) {return a.concat(b);});
+    this.pick = function(x, y, sorted, layered) {
+      var ls = this.getAllLayers().map(function(layer) {return {
+          z: layer.z(),
+          es: layer.pick(x, y)
+          };});
+
+      // 4 potential outputs based on sorted/layered options
+      if (sorted) {
+        if (layered) {
+          // sorted by layer.z, then e.z
+          ls.forEach(function(l) {
+              l.es = meta.zsort(l.es).reverse();
+              });
+          ls = meta.zsort(ls).reverse();
+          ls = ls.map(function(l) {return l.es;});
+          ls = ls.reduce(meta.concat);
+        } else {
+          // sorted by e.z across layers
+          ls = ls.map(function(l) {return l.es;});
+          ls = ls.reduce(meta.concat);
+          ls = meta.zsort(ls).reverse();
+        }
+      } else {
+        if (layered) {
+          ls = meta.zsort(ls).reverse();
+        }
+        ls = ls.map(function(l) {return l.es});
+        ls = ls.reduce(meta.concat, []);
+      }
+
+      return ls;
     };
 
-    this.resize(w_, h_);
-    node.appendChild(parent_);
-    layers_['default'] = new meta.Layer(this, options);
-    
     var position = function(element) {
       if (!element.offsetParent) return [0, 0];
       return meta.math.vector.plus(
@@ -440,19 +475,32 @@
 
     var handle_click = function(event) {
       var mouse = mouse_pos(event),
-          hits = meta.zsort(this.pick.apply(this, mouse));
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true);
 
       if (!hits.length) return;
 
       var top = hits[0];
       if (!top.onclick) return;
 
-      top.onclick.call(top.model, event);
+      top.onclick.apply(top, mouse);
+    };
+
+    var handle_dblclick = function(event) {
+      var mouse = mouse_pos(event),
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true);
+
+      if (!hits.length) return;
+
+      var top = hits[0];
+      if (!top.ondblclick) return;
+
+      top.ondblclick.apply(top, mouse);
     };
 
     var handle_mousemove = function(event) {
       var mouse = mouse_pos(event),
-          hits = meta.zsort(this.pick.apply(this, mouse)),
+          diff = meta.math.vector.minus(mouse, mouse_),
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true),
           top;
 
       if (hits.length) top = hits[0];
@@ -461,23 +509,88 @@
 
       // trigger mouseout event
       if (top != focus_ && focus_ && focus_.onmouseout)
-        focus_.onmouseout.call(focus_);
+        focus_.onmouseout.apply(focus_, mouse);
 
       // trigger mouseover event
       if (top && top != focus_ && top.onmouseover)
-        top.onmouseover.call(top);
+        top.onmouseover.apply(top, mouse);
 
       // trigger mousemove event
       if (top && top.onmousemove)
-        top.onmousemove.call(top);
+        top.onmousemove.apply(top, mouse);
+
+      // trigger drag event
+      if (dragged_ && dragged_.ondrag)
+        dragged_.ondrag.call(dragged_, mouse[0], mouse[1], diff[0], diff[1]);
 
       focus_ = top;
+      mouse_ = mouse;
     };
 
+    var handle_mousedown = function(event) {
+      var mouse = mouse_pos(event),
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true),
+          top;
+
+      if (!hits.length) return;
+
+      top = hits[0];
+
+      // trigger mousedown event
+      if (top && top.onmousedown)
+        top.onmousedown.apply(top, mouse);
+
+      if (top && top.ondrag)
+        dragged_ = top;
+    };
+
+    var handle_mouseup = function(event) {
+      var mouse = mouse_pos(event),
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true),
+          top;
+
+      if (hits.length) top = hits[0];
+
+      // trigger mouseup event
+      if (top && top.onmouseup)
+        top.onmouseup.apply(top, mouse);
+
+      // trigger drop event
+      if (dragged_ && dragged_.ondrop)
+        dragged_.ondrop.apply(dragged_, mouse);
+
+      // clear dragged entity
+      dragged_ = null;
+    };
+
+    var handle_mouseout = function(event) {
+      var mouse = mouse_pos(event);
+
+      // trigger mouseout event
+      if (focus_ && focus_.onmouseout)
+        focus_.onmouseout.apply(focus_, mouse);
+
+      // trigger drop event
+      if (dragged_ && focus_.ondrop)
+        dragged_.ondrop.apply(dragged_, mouse);
+
+      // clear dragged entity
+      dragged_ = null;
+
+      // clear focused entity
+      focus_ = null;
+    };
+
+    this.resize(w_, h_);
+    node.appendChild(parent_);
+    layers_['default'] = new meta.Layer(this, options);
+
     parent_.addEventListener('click', handle_click.bind(this));
-    //parent_.addEventListener('mousedown');
-    //parent_.addEventListener('mouseup');
+    parent_.addEventListener('mousedown', handle_mousedown.bind(this));
+    parent_.addEventListener('mouseup', handle_mouseup.bind(this));
     parent_.addEventListener('mousemove', handle_mousemove.bind(this));
+    parent_.addEventListener('mouseout', handle_mouseout.bind(this));
+    parent_.addEventListener('dblclick', handle_dblclick.bind(this));
 
   };
 

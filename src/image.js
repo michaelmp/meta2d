@@ -163,7 +163,8 @@
 
     /**
      * @method getPixel
-     *  Returns an array of RGBA integer values in [0, 255].
+     *  Returns an array of RGBA integer values in [0, 255],
+     *  or null if (x, y) is outside the image bounds.
      *
      * @param x
      *  The column index.
@@ -174,6 +175,7 @@
      */
     this.getPixel = function(x, y) {
       var idx = 4 * ((y * w_) + x);
+      if (idx < 0 || idx >= pixels_.length) return null;
       return [
         pixels_[idx],
         pixels_[idx+1],

@@ -68,12 +68,38 @@
     return new o();
   };
 
+  var yes = function() {
+    var o = function() {};
+
+    o.prototype = new Mask();
+
+    o.prototype.overlaps = function() {
+      return true;
+    };
+
+    return new o();
+  };
+
+  var no = function() {
+    var o = function() {};
+
+    o.prototype = new Mask();
+
+    o.prototype.overlaps = function() {
+      return false;
+    };
+
+    return new o();
+  };
+
   meta.mixSafely(meta, {
     Mask: Mask
   });
 
   meta.mask = meta.declareSafely(meta.mask, {
-    opaque: opaque
+    opaque: opaque,
+    yes: yes,
+    no: no
   });
 
 }).call(this);

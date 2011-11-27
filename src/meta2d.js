@@ -93,6 +93,11 @@
     return args(arguments).reduce(function(a, b) {return (a > b) ? b : a;});
   };
 
+  /** Concatenate two arrays */
+  var concat = function(a1, a2) {
+    return a1.concat(a2);
+  };
+
   /** Get index in array or null (undefined may be undesirable) */
   var index = function(i, array) {
     if (i >= array.length || i < 0) return null;
@@ -113,7 +118,7 @@
   /** Sort an array of entities by their 'z' attribute' */
   var zsort = function(array) {
     return array.sort(function(a, b) {
-        return  (b.z || -Infinity) - (a.z || -Infinity);
+        return  (a.z || -Infinity) - (b.z || -Infinity);
         });
   };
 
@@ -135,6 +140,11 @@
     return Math.floor(low + (high - low + 1) * rand());
   };
 
+  /** Round down a float to an integer */
+  var floor = function(val) {
+    return val << 0;
+  };
+
   /** Round a float to an integer */
   var round = function(val) {
     return (0.5 + val) << 0;
@@ -143,6 +153,17 @@
   /** Convert an array into a string */
   var serialize = function(array) {
     return array.join(',');
+  };
+
+  /** Cycle through any number of callbacks */
+  var toggle = function() {
+    var fs = args(arguments),
+        current = 0;
+    var f = function() {
+      current %= fs.length;
+      return fs[current++].call(void 0);
+    };
+    return f;
   };
 
   // Modifiable Types
@@ -166,14 +187,17 @@
     args: args,
     max: max,
     min: min,
+    concat: concat,
     idx: index,
     zip: zip,
     zsort: zsort,
     time: time,
     rand: rand,
     randInt: randInt,
+    floor: floor,
     round: round,
     serialize: serialize,
+    toggle: toggle,
     MaskType: MaskType,
     ProjectionType: ProjectionType,
     TweenType: TweenType
