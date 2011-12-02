@@ -240,7 +240,8 @@
 
   };
 
-  meta.mixSafely(meta, {LRU: LRU});
+  meta.mixSafely(meta, {
+    LRU: LRU
+  });
 
 }).call(this);
-

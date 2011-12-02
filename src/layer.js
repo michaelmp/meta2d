@@ -237,7 +237,7 @@
      * @return Layer
      */
 
-    // I would like to use 'copy' here but FF does not respecting the clipping
+    // I would like to use 'copy' here but FF does not respect the clipping
     // region in composite operations.
     //
     // 24 May '11

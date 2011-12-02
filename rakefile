@@ -13,7 +13,7 @@ directory "doc/api"
 directory "jsmin/bin"
 
 # Order matters:
-sourcefiles = [ 
+sourcefiles = [
   "src/meta2d.js",
   "src/modify.js",
   "src/math/affine.js",

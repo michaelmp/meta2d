@@ -1,12 +1,7 @@
-/** meta2d.js
+/** META2d.js
  *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
  * 
- *  An enhanced implementation of the CanvasRenderingContext2D as specified by
- *  the World Wide Web Consortium in HTML5.
- *
- *  Features include: layers, mouse interaction, animation, cacheing, and more!
- *
- *  This file provides the base for the library and should be included first.
+ *  Enhancements for Canvas 2d Context.
  * 
  *      This file is part of Meta2D.
  *
