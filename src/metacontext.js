@@ -50,7 +50,7 @@
     if (!node)
       throw new meta.exception.InvalidParameterException();
 
-    var parent_ = document.createElement('div'),
+    var parent_,
         layers_ = {},
         tags_ = {},
         cameraPos_ = [0, 0],
@@ -247,11 +247,13 @@
       if (meta.undef(w) || meta.undef(h))
         throw new meta.exception.InvalidParameterException();
       
-      // Do nothing.
-      if (w_ === w && h_ === h) return this;
+      // Do nothing if parent is set and dimensions haven't changed.
+      if (w_ === w && h_ === h  && parent_) return this;
 
       w_ = w;
       h_ = h;
+
+      if (!parent_) parent_ = document.createElement('div');
 
       var style = canvas_ ?
         '' :

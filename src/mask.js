@@ -56,7 +56,7 @@
 
     o.prototype.overlaps = function(x, y) {
       if (!d || meta.math.affine.isSingular(d.transform))
-          return false;
+        return false;
 
       var t = d.transform,
           t_inv = meta.math.affine.invert(t),
