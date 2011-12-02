@@ -55,7 +55,7 @@
     o.prototype = new Mask();
 
     o.prototype.overlaps = function(x, y) {
-      if (meta.math.affine.isSingular(d.transform))
+      if (!d || meta.math.affine.isSingular(d.transform))
           return false;
 
       var t = d.transform,
