@@ -1,4 +1,4 @@
-/** META2d.js
+/** meta2d.js
  *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
  * 
  *  Enhancements for Canvas 2d Context.
