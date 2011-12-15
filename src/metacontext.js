@@ -51,17 +51,21 @@
       throw new meta.exception.InvalidParameterException();
 
     var parent_,
+        options_ = options,
         layers_ = {},
         tags_ = {},
         cameraPos_ = [0, 0],
         cameraProj_ = meta.projection.flat(),
         cursorPos_,
         activeLayer_ = 'default',
+        hover_ = null,
         focus_ = null,
+        focus_default_ = null,
         dragged_ = null,
+        textinput_ = null,
         mouse_ = [0, 0],
-        w_ = options && options.w,
-        h_ = options && options.h,
+        w_ = options_ && options_.w,
+        h_ = options_ && options_.h,
         canvas_ = void 0;
 
     // @private
@@ -131,14 +135,18 @@
      *  [li] onmousemove [/li]
      *  [/ul]
      *
-     * @return [MetaContext2d]
+     * @return entity
      */
     this.put = function(tags, options) {
       if (meta.isString(tags)) tags = tags.split(' ');
-      var e = meta.mixSafely({id: ENTITY_COUNT++, tags: tags}, options),
-          l = getActiveLayer_();
-      meta.mixSafely(e, {model: {}});
+      tags.push('*');
+      var l = getActiveLayer_(),
+          e = meta.mixSafely({
+            id: ENTITY_COUNT++,
+            tags: tags,
+            layer: l}, options);
 
+      meta.mixSafely(e, {model: {}});
       tags.forEach(function(t) {
           var es = tags_[t];
           if (meta.undef(es)) es = tags_[t] = {};
@@ -147,7 +155,28 @@
 
       l.put(e);
             
-      return this;
+      return e;
+    };
+
+    /**
+     * @method array
+     * @param n
+     * @param tags
+     * @param options
+     * @return MetaContext
+     */
+    this.array = function(n, tags, options) {
+      var e = {
+        children: []
+      };
+
+      while (n--) {
+        options.child = n;
+        options.parent = e;
+        e.children.push(this.put(tags, options));
+      }
+
+      return this.put(tags, e);
     };
 
     /**
@@ -210,7 +239,7 @@
      */
     this.layer = function(name) {
       if (! (name in layers_)) {
-        layers_[name] = new meta.Layer(this, options);
+        layers_[name] = new meta.Layer(this, options_);
       }
       activeLayer_ = name;
       return this;
@@ -307,6 +336,7 @@
       'prune',
       'render',
       'memo',
+      'repaint',
       'parallax',
       'z',
       'index',
@@ -322,7 +352,8 @@
       'flipAll',
       'pruneAll',
       'renderAll',
-      'memoAll'
+      'memoAll',
+      'repaintAll'
     ].forEach(defer_to_all_layers, this);
 
     [ // Context2d methods.
@@ -510,11 +541,11 @@
       this.cursor(mouse);
 
       // trigger mouseout event
-      if (top != focus_ && focus_ && focus_.onmouseout)
-        focus_.onmouseout.apply(focus_, mouse);
+      if (top != hover_ && hover_ && hover_.onmouseout)
+        hover_.onmouseout.apply(hover_, mouse);
 
       // trigger mouseover event
-      if (top && top != focus_ && top.onmouseover)
+      if (top && top != hover_ && top.onmouseover)
         top.onmouseover.apply(top, mouse);
 
       // trigger mousemove event
@@ -525,7 +556,14 @@
       if (dragged_ && dragged_.ondrag)
         dragged_.ondrag.call(dragged_, mouse[0], mouse[1], diff[0], diff[1]);
 
-      focus_ = top;
+      // set the mouse cursor
+      if (top && top.cursor) {
+        this.getRootNode().style.cursor = top.cursor;
+      } else {
+        this.getRootNode().style.cursor = 'default';
+      }
+
+      hover_ = top;
       mouse_ = mouse;
     };
 
@@ -534,16 +572,28 @@
           hits = this.pick.call(this, mouse[0], mouse[1], true, true),
           top;
 
-      if (!hits.length) return;
+      if (hits.length) {
+        top = hits[0];
 
-      top = hits[0];
+        // trigger mousedown event
+        if (top && top.onmousedown)
+          top.onmousedown.apply(top, mouse);
 
-      // trigger mousedown event
-      if (top && top.onmousedown)
-        top.onmousedown.apply(top, mouse);
+        if (top && top.ondrag) {
+          dragged_ = top;
+        }
+      }
 
-      if (top && top.ondrag)
-        dragged_ = top;
+      if (top != focus_)
+        handle_textinput_blur(event);
+
+      focus_ = focus_default_ = top;
+
+      if (focus_ && focus_.onfocus) {
+        handle_textinput_focus();
+      }
+      
+      event.preventDefault();
     };
 
     var handle_mouseup = function(event) {
@@ -569,23 +619,54 @@
       var mouse = mouse_pos(event);
 
       // trigger mouseout event
-      if (focus_ && focus_.onmouseout)
-        focus_.onmouseout.apply(focus_, mouse);
+      if (hover_ && hover_.onmouseout)
+        hover_.onmouseout.apply(hover_, mouse);
 
       // trigger drop event
-      if (dragged_ && focus_.ondrop)
+      if (dragged_ && hover_.ondrop)
         dragged_.ondrop.apply(dragged_, mouse);
 
       // clear dragged entity
       dragged_ = null;
 
-      // clear focused entity
-      focus_ = null;
+      // clear hovered entity
+      hover_ = null;
     };
 
+    var handle_textinput = function(event) {
+      // trigger textinput event
+      if (focus_ && focus_.ontextinput) {
+        focus_.ontextinput.call(focus_, event, event.data);
+      }
+      textinput_.value = '';
+    };
+
+    var handle_textinput_blur = function(event) {
+      // trigger blur event on focused entity
+      if (focus_ && focus_.onblur)
+        focus_.onblur.call(focus_);
+    };
+
+    var handle_textinput_focus = function(event) {
+      if (!event) {
+        focus_ = focus_default_;
+      }
+
+      if (focus_ && focus_.onfocus)
+        focus_.onfocus.call(focus_);
+
+      if (focus_ && focus_.contentEditable) {
+        textinput_.focus();
+      }
+    };
+
+    // Set up the injected DOM elements.
+
     this.resize(w_, h_);
+    layers_['default'] = new meta.Layer(this, options_);
     node.appendChild(parent_);
-    layers_['default'] = new meta.Layer(this, options);
+
+    // Listen to DOM mouse events.
 
     parent_.addEventListener('click', handle_click.bind(this));
     parent_.addEventListener('mousedown', handle_mousedown.bind(this));
@@ -594,10 +675,34 @@
     parent_.addEventListener('mouseout', handle_mouseout.bind(this));
     parent_.addEventListener('dblclick', handle_dblclick.bind(this));
 
+    // Listen to DOM textInput event via hidden input.
+
+    textinput_ = document.createElement('input');
+    textinput_.style.position = 'fixed';
+    textinput_.style.left = '-31337px';
+    textinput_.addEventListener('textInput', handle_textinput.bind(this));
+    textinput_.addEventListener('blur', handle_textinput_blur.bind(this));
+    textinput_.addEventListener('focus', handle_textinput_focus.bind(this));
+    parent_.appendChild(textinput_);
+  };
+
+  var create = function(node, options) {
+    if (meta.isString(node))
+      node = document.getElementById(node);
+    if (!node)
+      throw new meta.exception.InvalidParameterException();
+
+    options = meta.mixSafely(options, {
+      w: node.clientWidth || 300,
+      h: node.clientHeight || 150
+    });
+
+    return new MetaContext(node, options);
   };
 
   meta.mixSafely(meta, {
-    MetaContext: MetaContext
+    MetaContext: MetaContext,
+    create: create
   });
 
 }).call(this);

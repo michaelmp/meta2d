@@ -68,6 +68,22 @@
     return new o();
   };
 
+  var bbox = function(d) {
+    var o = function() {};
+
+    o.prototype = new Mask();
+
+    o.prototype.overlaps = function(x, y) {
+      if (!d) return false;
+
+      var bounds = d.getBounds();
+
+      return meta.math.rect.contains(bounds, [x, y, 1, 1]); 
+    };
+
+    return new o();
+  };
+
   var yes = function() {
     var o = function() {};
 
@@ -98,6 +114,7 @@
 
   meta.mask = meta.declareSafely(meta.mask, {
     opaque: opaque,
+    bbox: bbox,
     yes: yes,
     no: no
   });

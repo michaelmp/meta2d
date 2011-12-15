@@ -31,6 +31,7 @@
 
   // Promiscuously mix in properties.
   var mix = function(host, vector) {
+    host = host || {};
     if (!vector) return host;
     for (var a in vector) host[a] = vector[a];
     return host;
@@ -38,6 +39,7 @@
 
   // Only mix in novel properties.
   var safe_mix = function(host, vector) {
+    host = host || {};
     if (!vector) return host;
     for (var a in vector)
       if (! (a in host)) host[a] = vector[a];
@@ -156,9 +158,27 @@
         current = 0;
     var f = function() {
       current %= fs.length;
-      return fs[current++].call(void 0);
+      return fs[current++].call(this);
     };
     return f;
+  };
+
+  /** Format a color string */
+
+  var hsla = function(h, s, l, a) {
+    return 'hsla(' + h + ',' + s + '%,' + l + '%,' + a + ')';
+  };
+
+  var hsl = function(h, s, l) {
+    return hsla(h, s, l, 1);
+  };
+
+  var rgba = function(r, g, b, a) {
+    return 'rgba' + r + ',' + g + ',' + b + ',' + a + ')';
+  };
+
+  var rgb = function(r, g, b) {
+    return rgba(r, g, b, 1);
   };
 
   // Modifiable Types
@@ -193,6 +213,10 @@
     round: round,
     serialize: serialize,
     toggle: toggle,
+    hsla: hsla,
+    hsl: hsl,
+    rgba: rgba,
+    rgb: rgb,
     MaskType: MaskType,
     ProjectionType: ProjectionType,
     TweenType: TweenType

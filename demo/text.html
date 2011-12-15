@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js TextArea Demo</title>
+  </head>
+  <body>
+    <span id="demo"></span>
+
+    <noscript>
+      You will need to enable Javascript to run this demo.
+    </noscript>
+
+    <script type="text/javascript" src="meta2d.js"></script>
+
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function() {
+
+        var mcx = meta2d.create('demo', {
+          w: 600,
+          h: 300
+        });
+
+        mcx.put('text', meta2d.ui.text({
+          fontfamily: 'monospace',
+          fontsize: '14px',
+          highlight: 'on',
+          lines: 'on',
+          cols: 40
+        }));
+
+        mcx.memo();
+        mcx.repaint();
+
+      })
+    </script>
+  </body>
+</html>

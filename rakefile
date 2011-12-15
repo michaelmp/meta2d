@@ -31,7 +31,12 @@ sourcefiles = [
   "src/rcache.js",
   "src/rtree.js",
   "src/segment.js",
-  "src/tween.js"
+  "src/tween.js",
+  "src/ui/button.js",
+  "src/ui/draggable.js",
+  "src/ui/progress.js",
+  "src/ui/selectable.js",
+  "src/ui/text.js"
 ]
 
 signature = %{"/**\n * meta2d.js (c) 2011 Michael Morris-Pearce\n * visit https://gitorious.org/meta2d/ for more information. */"}

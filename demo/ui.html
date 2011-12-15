@@ -1,0 +1,76 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js UI Demo</title>
+  </head>
+  <body>
+
+    <span id="demo"></span>
+
+    <noscript>
+      You will need to enable Javascript to run this demo.
+    </noscript>
+
+    <script type="text/javascript" src="meta2d.js"></script>
+
+    <script type="text/javascript">
+
+      document.addEventListener('DOMContentLoaded', function() {
+
+        var mcx = meta2d.create('demo', {
+          w: 400,
+          h: 300
+        });
+
+        mcx.put('progress', meta2d.ui.progress({
+          pos: [50, 100],
+          size: [200, 20],
+          value: 50
+        }));
+
+        mcx.put('button', meta2d.ui.button({
+          pos: [100, 20],
+          value: 'Click me!',
+          onclick: function() {
+            mcx.select('progress').forEach(function(e) {
+              e.value = meta2d.randInt(0, 100);
+              e.layer.repaint(e);
+            });
+          }
+        }));
+
+        mcx.put('draggable', meta2d.ui.button({
+          pos: [50, 200],
+          value: 'Drag me!',
+          //ondrag: function() {},
+          //ondrop: function() {}
+        }));
+
+        mcx.select('draggable').forEach(meta2d.ui.draggable);
+
+        mcx.array(4, 'v-list selectable', meta2d.ui.button({
+          pos: [300, 50],
+          align: 'v',
+          //onselected: function() {},
+          //onunselected: function() {},
+          //onselecting: function() {},
+          //onunselecting: function() {}
+        }));
+
+        mcx.select('v-list').forEach(function(e, i) {
+          e.value = ['a', 'b', 'c', 'd'][i];
+        });
+
+        mcx.select('selectable').forEach(meta2d.ui.selectable);
+
+        mcx.memo();
+        mcx.repaint();
+
+        mcx.layer('border');
+        mcx.strokeRect(0, 0, 400, 300);
+      })
+
+    </script>
+  </body>
+</html>

@@ -92,7 +92,8 @@
     var recursive_render = function(e) {
       var drawings = [],
           children = e.children || [],
-          d;
+          d,
+          font = [];
 
       children = meta.zsort(children);
 
@@ -103,6 +104,21 @@
       if (e.pos) ctx_.translate(e.pos[0], e.pos[1]);
       if (meta.def(e.angle)) ctx_.rotate(e.angle);
       if (meta.def(e.zoom)) ctx_.scale(e.zoom, e.zoom);
+      
+      // Global state properties.
+      if (meta.def(e.alpha)) ctx_.globalAlpha = e.alpha;
+      if (meta.def(e.composite)) ctx_.globalCompositeOperation = e.composite;
+
+      // Set the font.
+      if (e.font) {
+        font.push(e.font)
+      } else {
+        if (e.fontstyle) font.push(e.fontstyle);
+        if (e.fontweight) font.push(e.fontweight);
+        if (e.fontsize) font.push(e.fontsize);
+        if (e.fontfamily) font.push(e.fontfamily);
+      }
+      ctx_.font = font.join(' ');
 
       if (e.draw) {
         drawings.push(e.draw);
@@ -113,10 +129,15 @@
 
       // Recurse on any children.
       children.forEach(function(e) {
-          drawings = drawings.concat(render_entity(e));
-          });
+        drawings = drawings.concat(recursive_render(e));
+      });
 
       ctx_.restore();
+
+      // Affect sibling position.
+      if (e.parent && e.offset) {
+        ctx_.translate(e.offset[0], e.offset[1]);
+      }
 
       return drawings;
     }
@@ -132,9 +153,19 @@
      * @return Layer
      */
     this.render = function(x, y, w, h) {
-      var es = rtree_.search([x, y, w, h]).concat(entities_),
+      var rect = [
+        x || 0,
+        y || 0,
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
+      var es = rtree_.search(rect).concat(entities_),
           drawings = [];
       
+      // Only start with top-level entities. Recurse to children.
+      es = es.filter(function(e) {return !e.parent;});
+
+      // Sort by 'z' property.
       es = meta.zsort(es);
 
       // Call each entity's ondraw method, allowing direct rendering onto
@@ -169,6 +200,10 @@
         throw new meta.exception.InvalidParameterException();
       }
 
+      // Copy certain properties
+      ctx.globalAlpha = ctx_.globalAlpha;
+      ctx.globalCompositeOperation = ctx_.globalCompositeOperation;
+
       var o ={
         ctx: ctx,
         transform: ctx_.getTransform(),
@@ -196,6 +231,10 @@
           // Apply the drawing's transformation.
           b.ctx.transform.apply(b.ctx, d.transform);
 
+          // Apply alpha.
+          b.ctx.globalAlpha = d.ctx.globalAlpha;
+          b.ctx.globalCompositeOperation = d.ctx.globalCompositeOperation;
+
           b.ctx.drawImage(d.ctx.canvas, 0, 0);
 
           b.ctx.restore();
@@ -216,7 +255,12 @@
      *  thisArg
      */
     this.memo = function(x, y, w, h) {
-      var rect = [x, y, w, h];
+      var rect = [
+        x || 0,
+        y || 0,
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
 
       memos_.add(rect, {
         ctx: new meta.Context(rect[2], rect[3]),
@@ -259,7 +303,12 @@
     // and several other composition types.
     //
     this.flip = function(x, y, w, h) {
-      var rect = [x + mcx.camera()[0], y + mcx.camera()[1], w, h];
+      var rect = [
+        (x || 0) + mcx.camera()[0],
+        (y || 0) + mcx.camera()[1],
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
 
       memos_.search(rect).forEach(function(b) {
           var itx = meta.math.rect.intersect(b.rect, rect);
@@ -311,7 +360,12 @@
      * @return Layer
      */
     this.erase = function(x, y, w, h) {
-      var rect = [x, y, w, h];
+      var rect = [
+        x || 0,
+        y || 0,
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
 
       memos_.search(rect).forEach(function(b) {
           var itx = meta.math.rect.intersect(b.rect, rect);
@@ -343,7 +397,12 @@
         return this;
       }
 
-      var rect = [x, y, w, h];
+      var rect = [
+        x || 0,
+        y || 0,
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
 
       memos_.pluckInside(rect);
 
@@ -362,10 +421,49 @@
      * @return [meta::Layer]
      */
     this.crop = function(x, y, w, h) {
-      var rect = [x, y, w, h];
+      var rect = [
+        x || 0,
+        y || 0,
+        w || this.getWidth(),
+        h || this.getHeight()
+      ];
 
       memos_.pluckOutside(rect);
 
+      return this;
+    };
+
+    /**
+     * @method repaint
+     *
+     * Very simple, potentially expensive, render & flip.
+     *
+     * @return [Layer]
+     */
+    this.repaint = function() {
+      var d, b;
+      if (arguments.length === 1) {
+        d = arguments[0].draw;
+        if (d) {
+          b = d.getBounds();
+          delete arguments[0].draw;
+          this.erase.apply(this, b);
+          this.render.apply(this, b);
+          this.flip.apply(this, b);
+        } else {
+          this.erase(0, 0, this.getWidth(), this.getHeight());
+          this.render(0, 0, this.getWidth(), this.getHeight());
+          this.flip(0, 0, this.getWidth(), this.getHeight());
+        }
+      } else if (arguments.length === 4) {
+        this.erase.apply(this, arguments);
+        this.render.apply(this, arguments);
+        this.flip.apply(this, arguments);
+      } else {
+        this.erase(0, 0, this.getWidth(), this.getHeight());
+        this.render(0, 0, this.getWidth(), this.getHeight());
+        this.flip(0, 0, this.getWidth(), this.getHeight());
+      }
       return this;
     };
 
