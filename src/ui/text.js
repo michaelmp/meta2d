@@ -362,7 +362,7 @@
     return this.draw
   }
   
-  // drag over text to copy
+  // TODO: drag over text to copy
 
   proto.onmask = function() {
     if (this.draw) return this.mask = meta.mask.bbox(this.draw)
