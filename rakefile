@@ -1,19 +1,21 @@
-=begin
-  A basic build script for meta2d.js.
+# A simple build script for Meta2D.
+#
+# Instructions:
+#
+#   (1) Install rake build system.
+#
+#   (2) Run 'rake' to generate the following:
+#       ++ /meta2d.js
+#       ++ /docs/api/index.html
+#
+#   (3) Run 'rake clean':
+#       -- Removes generated files.
 
-  How to use this build script:
-    (1) Install rake for your system.
-    (2) Run `rake' in your terminal.
-    (3) All builds are output to `build' directory.
+directory "docs/api"
 
-=end
-
-directory "build"
-directory "doc/api"
-directory "jsmin/bin"
-
-# Order matters:
+# (load order matters)
 sourcefiles = [
+  "signature.js",
   "src/meta2d.js",
   "src/modify.js",
   "src/math/affine.js",
@@ -22,6 +24,7 @@ sourcefiles = [
   "src/animation.js",
   "src/mask.js",
   "src/context.js",
+  "src/drawing.js",
   "src/image.js",
   "src/layer.js",
   "src/lru.js",
@@ -39,46 +42,18 @@ sourcefiles = [
   "src/ui/text.js"
 ]
 
-signature = %{"/**\n * meta2d.js (c) 2011 Michael Morris-Pearce\n * visit https://gitorious.org/meta2d/ for more information. */"}
-
 desc "Combine all javascript source files into a single file."
-task :merge => 'build' do
-  puts "Merging src/*.js into build/meta2d.js"
-  sh "cat " + sourcefiles.join(" ") + " > 'build/meta2d.js'"
-  puts "Done merging source."
-  puts ""
-end
-
-desc "Build the jsmin binary."
-file 'jsmin/bin/jsmin' => ['jsmin/src/jsmin.c', 'jsmin/bin'] do
-  puts "Building jsmin from source..."
-  sh "gcc jsmin/src/jsmin.c -o jsmin/bin/jsmin"
-  puts "Done building jsmin."
-  puts ""
-end
-
-desc "Minify the javascript source."
-task :minify => ['jsmin/bin/jsmin'] do
-  puts "Minifying build/meta2d.js as build/meta2d.min.js..."
-  sh "echo " + signature + " > 'build/meta2d.min.js'"
-  sh "'jsmin/bin/jsmin' < 'build/meta2d.js' >> 'build/meta2d.min.js'" 
-  puts "Done minifying."
-  puts ""
-end
-
-desc "Export a gzip-compressed copy of all builds."
-task :compress => [:merge, :minify] do
-  puts "gzipping build files..."
-  sh "gzip -c build/meta2d.js > build/meta2d.js.gz"
-  sh "gzip -c build/meta2d.min.js > build/meta2d.min.js.gz"
-  puts "Done compressing."
+task :merge do
+  puts "Merging src/*.js into meta2d.js"
+  sh "cat " + sourcefiles.join(" ") + " > 'meta2d.js'"
+  puts "Done merging library."
   puts ""
 end
 
 desc "Build the documentation."
-task :document => [:merge, 'doc/api'] do
+task :document => [:merge, 'docs/api'] do
   puts "Parsing comments to build HTML documentation..."
-  sh "cat 'build/meta2d.js' | ./doc.py > doc/api/index.html"
+  sh "cat 'meta2d.js' | ./doc.py > docs/api/index.html"
   puts "Done documenting."
   puts ""
 end
@@ -86,18 +61,11 @@ end
 desc "Remove all generated files."
 task :clean do
   sh """
-    rm -r build ;
-    rm doc/api/index.html ;
-    rm -r jsmin/bin ;
-    rm *~ ;
-    rm src/*~ ;
-    rm src/math/*~ ;
-    rm doc/api/*~ ;
-    rm test/*~ ;
-    rm demo/*~
+    rm meta2d.js ;
+    rm docs/api/index.html ;
     """
 end
 
-desc "Merge, minify, and compress source code."
-task :default => [:merge, :minify, :compress] do
+desc "Generate Javascript library, build documentation."
+task :default => [:merge, :document] do
 end

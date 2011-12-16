@@ -49,23 +49,28 @@
     throw new meta.exception.InvokedAbstractMethodException();
   };
 
+  var Opaque = function(d) {
+    this.drawing = d;
+  };
+
+  Opaque.prototype = new Mask();
+
+  Opaque.prototype.overlaps = function(x, y) {
+    if (!this.drawing ||
+        meta.math.affine.isSingular(this.drawing.transform)) {
+      return false;
+    }
+
+    var t = this.drawing.transform,
+        t_inv = meta.math.affine.invert(t),
+        pixel = meta.math.affine.applyToVector(t_inv, [x, y]);
+
+    return this.drawing.ctx.getImageData(
+        pixel[0], pixel[1], 1, 1).data[3] > 0;
+  };
+
   var opaque = function(d) {
-    var o = function() {};
-
-    o.prototype = new Mask();
-
-    o.prototype.overlaps = function(x, y) {
-      if (!d || meta.math.affine.isSingular(d.transform))
-        return false;
-
-      var t = d.transform,
-          t_inv = meta.math.affine.invert(t),
-          pixel = meta.math.affine.applyToVector(t_inv, [x, y]);
-
-      return d.ctx.getImageData(pixel[0], pixel[1], 1, 1).data[3] > 0;
-    };
-
-    return new o();
+    return new Opaque(d);
   };
 
   var bbox = function(d) {

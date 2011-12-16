@@ -29,38 +29,12 @@
 
   var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
 
-  var get_bounds = function(drawing) {
-    var t = drawing.transform,
-        x1 = 0,
-        y1 = 0,
-        x2 = 0,
-        y2 = drawing.ctx.canvas.height,
-        x3 = drawing.ctx.canvas.width,
-        y3 = drawing.ctx.canvas.height,
-        x4 = drawing.ctx.canvas.width,
-        y4 = 0,
-        x1T = t[0] * x1 + t[2] * y1 + t[4],
-        y1T = t[1] * x1 + t[3] * y1 + t[5],
-        x2T = t[0] * x2 + t[2] * y2 + t[4],
-        y2T = t[1] * x2 + t[3] * y2 + t[5],
-        x3T = t[0] * x3 + t[2] * y3 + t[4],
-        y3T = t[1] * x3 + t[3] * y3 + t[5],
-        x4T = t[0] * x4 + t[2] * y4 + t[4],
-        y4T = t[1] * x4 + t[3] * y4 + t[5],
-        top = meta.min(y1T, y2T, y3T, y4T),
-        bottom = meta.max(y1T, y2T, y3T, y4T),
-        left = meta.min(x1T, x2T, x3T, x4T),
-        right = meta.max(x1T, x2T, x3T, x4T);
-
-    return [left, top, right - left, bottom - top];
-  };
-
   var mask = function(e, x, y) {
-    if (e.mask) return e.mask.overlaps.call(void 0, x, y);
+    if (e.mask) return e.mask.overlaps(x, y);
     if (!e.onmask) return false;
     var m = e.onmask.call(e);
     if (!m) return false;
-    return m.overlaps.call(void 0, x, y);
+    return m.overlaps(x, y);
   };
 
   /**
@@ -190,27 +164,14 @@
      * @return Drawing
      */
     this.makeDrawing = function() {
-      var ctx;
+      var d = new meta.Drawing(arguments[0], arguments[1]);
 
-      if (arguments.length === 2) {
-        ctx = new meta.Context(arguments[0], arguments[1]);
-      } else if (arguments.length === 1) {
-        ctx = arguments[0];
-      } else {
-        throw new meta.exception.InvalidParameterException();
-      }
+      // Copy certain properties from layer context.
+      d.ctx.globalAlpha = ctx_.globalAlpha;
+      d.ctx.globalCompositeOperation = ctx_.globalCompositeOperation;
+      d.transform = ctx_.getTransform();
 
-      // Copy certain properties
-      ctx.globalAlpha = ctx_.globalAlpha;
-      ctx.globalCompositeOperation = ctx_.globalCompositeOperation;
-
-      var o ={
-        ctx: ctx,
-        transform: ctx_.getTransform(),
-      };
-      o.getBounds = function() {return get_bounds(o)};
-
-      return o;
+      return d;
     };
 
     /**

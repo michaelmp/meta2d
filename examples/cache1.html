@@ -1,0 +1,260 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>meta2d.js Cacheing Demo #1</title>
+  </head>
+  <body>
+
+    <span id="demo"></span>
+
+    <noscript>
+      You will need to enable Javascript to run this demo.
+    </noscript>
+
+    <script type="text/javascript" src="meta2d.js"></script>
+    <script type="text/javascript">
+
+      var loaded,
+          image = new meta2d.Image('star.png',
+                                   false,
+                                   function() {loaded = true;});
+
+      document.addEventListener('DOMContentLoaded', function() {
+      
+        // This demonstration assumes that you have read drawing.html.
+        //
+        // This demonstration looks into the details of how the 'ondraw' method
+        // is used in the rendering model. Although this method has access to a
+        // context to perform direct rendering instructions, it is wasteful to repeat
+        // these instructions when the entity is redrawn identically many times.
+        // Similarly, multiple entities may want to use the same bitmap, differing
+        // only in position, rotation, scaling, etc.
+        //
+        // So let's make a scene with lots of entities and try to cut the
+        // rendering time down to a minimum.
+
+        var mcx = meta2d.create('demo', {
+          w: 800,
+          h: 300
+        });
+
+        mcx.layer('foreground').z(3);
+
+        // Rather than doing the path drawings in 'ondraw', let's make a distinct
+        // context for a shared bitmap. A 'Context' creates a hidden canvas of
+        // the given width & height and returns a Meta2D's version of the 2d
+        // context. It is identical to a typical 2d context, but it also has a
+        // getTransform method that returns the current transformation state.
+
+        var bitmap = new meta2d.Context(200, 100);
+
+        // How about a cloud? (This is the limit of my vector art abilities).
+
+        bitmap.moveTo(20, 100);
+        bitmap.fillStyle = 'rgba(200, 200, 200, 0.2)';
+        bitmap.quadraticCurveTo(0, 80, 40, 70);
+        bitmap.quadraticCurveTo(40, 30, 70, 40);
+        bitmap.quadraticCurveTo(100, 0, 130, 40);
+        bitmap.quadraticCurveTo(160, 30, 160, 70);
+        bitmap.quadraticCurveTo(200, 80, 180, 100);
+        bitmap.lineTo(50, 100);
+        bitmap.fill();
+
+        // Populate our scene with a few clouds.
+
+        for (var i = 0; i < 20; i++) {
+          mcx.put('cloud', {
+            pos: [-200 + 1000 * meta2d.rand(), 300 * meta2d.rand()]
+          });
+        }
+
+        // Ok, now let's define 'ondraw'.
+        //
+        // We have previously been defining ondraw as a list of Context commands that
+        // immediately update the canvas. But we already know what we want our cloud
+        // to look like (we drew it on  the "bitmap" context) so why should we repeat
+        // the commands for every cloud? But we also want every cloud to appear at its
+        // own position, and "bitmap" doesn't know about each cloud's position.
+        //
+        // drawing.html introduced drawings. You should read it if you haven't.
+        //
+        // Calling a layer's makeDrawing command will return a "Drawing," which is
+        // really just a context alongside a snapshot of the current transformation
+        // state in the layer's context (we use getTransform, as mentioned above).
+        //
+        // So in addition to the entity's position, any transformations you make in
+        // ondraw to the context will affect the Drawing.
+        //
+        // Finally, returning a Drawing in ondraw will get it drawn with the
+        // appropriate transformation when we call the "render" command.
+        //
+        // This may seem a little weird, but encapsulating the entity inside a
+        // single bitmap allows us to do a lot of nice things later.
+
+        var draw_cloud = function(cx, layer) {
+          return this.draw = layer.makeDrawing(bitmap);
+        };
+
+        mcx.select('cloud').forEach(function(e) {
+          e.ondraw = draw_cloud;
+        })
+
+        // Note that by specifying a value for e.draw, we can indicate that we do not
+        // need to call ondraw again since the return value never changes. So we will
+        // only invoke ondraw once per entity, when draw is undefined.
+        //
+        // If we need to, we can always delete e.draw and e.ondraw will be called
+        // again.
+        //
+        // So using the "draw" property instead of ondraw is the first way that we
+        // can improve performance.
+
+        // Alright back to work. Let's draw a hundred stars with some variations and
+        // cache all of them.
+
+        mcx.layer('distant').z(2);
+
+        for (var i = 0; i < 100; i++) {
+          mcx.put('star', {pos: [meta2d.randInt(0, 800), meta2d.randInt(0, 300)]});
+        }
+
+        // We expect 11 variations.
+
+        var cache = new meta2d.LRU(11);
+
+        var draw_star = function(cx, layer) {
+            if (!loaded) return;
+
+            var size = Math.floor(Math.abs(10 *
+                       Math.cos(this.model.offset++ / 50))) + 1,
+                hit = cache.get(size);
+
+            if (!hit) {
+              var star = layer.makeDrawing(90, 90),
+              scx = star.ctx;
+
+              scx.translate(45, 45);
+              scx.scale(1 / size, 1 / size);
+              scx.drawImage(image.getHTMLImage(), -4, -4, 9, 9);
+
+              cache.add(size, scx);
+            }
+
+            return this.draw = (hit && layer.makeDrawing(hit)) || star;
+        };
+
+        mcx.select('star').forEach(function(e) {
+          e.model.offset = meta2d.rand() * 200;
+          e.ondraw = draw_star;
+        });
+
+        // There's a lot going on in there so let's go through it.
+        // 
+        // First, we give each star a random offset value.
+        //
+        // We then convert that offset into a cycle of positive size values.
+        //
+        // We use the size as a key for our cache.
+        //
+        // If we find the bitmap we're looking for in cache, we use it.
+        //
+        // If not, we create a new drawing, use its context to draw the star, and
+        // store the bitmap inside the cache.
+        //
+        // Keep in mind that we are cacheing the context, not the drawing. The
+        // drawing refers to the context in its .ctx property, but it also knows the
+        // current transformation state (.transform), which is different for every
+        // entity (every star has its own translation based on its .pos value).
+        //
+        // Calling layer.makeDrawing(hit) as opposed to specifying width & height
+        // arguments means that you already have a context, but you just need the
+        // transform property applied.
+        //
+        // The return line uses a little bit of Javascript magic to say:
+        //   "return a drawing of the hit context if it was present, otherwise return
+        //    the penta drawing."
+
+        // Finally, let's give this scene a backdrop.
+
+        mcx.layer('sky').z(1);
+
+        var grad = mcx.createLinearGradient(0, 0, 0, 300);
+        grad.addColorStop(0, '#cc33cc');
+        grad.addColorStop(1, '#ff4444');
+
+        mcx.fillStyle = grad;
+        mcx.fillRect(0, 0, 800, 300);
+
+        // OK we've done everything we need to describe the scene. Let's draw it!
+
+        // Assume that because we have 100+ entities with bitmaps, that's potentially
+        // a lot of memory. Fortunately we were able to cache all of our bitmaps, but
+        // tougher applications will want to scale up and animate their entities
+        // making it more difficult for CPUs to keep up. Those considerations and an
+        // explanation of the memo/memoAll commands are deferred to cache2.html and
+        // cache3.html.
+
+        // Define the backbuffer for stars.
+
+        mcx.layer('distant');
+        mcx.memo();
+
+        // Define the backbuffer for clouds.
+
+        mcx.layer('foreground');
+        mcx.memo();
+
+        // The render command goes through a layer and calls the ondraw method for
+        // all entities. It then takes any drawings returned and paints them to the
+        // backbuffer inside coordinates specified by memo calls.
+        //
+        // If you want to see what's in the back buffer, you flip it to the front
+        // buffer. In this example all of our relevant content fits within 400x300,
+        // but cache3.html will look at what we can do when we have a large amount
+        // of offscreen content.
+        //
+        // Finally, erase clears the backbuffer in the indicated rectangle.
+
+        var move_clouds = function() {
+          mcx.select('cloud').forEach(function(e, i) {
+            e.pos[0] += 0.5 * (i % 5);
+
+            if (e.pos[0] > 800) e.pos[0] = -200;
+
+            delete e.draw; // This forces a new call to ondraw.
+          });
+
+          mcx.layer('foreground');
+          mcx.erase();
+          mcx.render();
+          mcx.flip();
+        }
+
+        setInterval(move_clouds, 100);
+
+        var twinkle_stars = function() {
+          mcx.select('star').forEach(function(e) {
+            delete e.draw;
+          });
+
+          mcx.layer('distant');
+          mcx.erase();
+          mcx.render();
+          mcx.flip();
+        };
+
+        setInterval(twinkle_stars, 100);
+
+        // Further reading:
+        //
+        //   Read mouse.html to learn how to use drawings to trigger mouse events.
+        //
+        //   Read cache2.html to learn how to pan a camera over an area larger than
+        //   your canvas size without eating up CPU.
+
+      });
+
+    </script>
+  </body>
+</html>
