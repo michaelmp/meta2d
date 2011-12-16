@@ -1,7 +1,7 @@
-/* ----------------------------------------------------------------------------
- * https://gitorious.org/meta2d/core/trees/master/
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
  * src/animation.js
- * ----------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------
  * Copyright 2011 Michael Morris-Pearce
  * 
  * This file is part of Meta2D.
@@ -20,12 +20,9 @@
  * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
 
-!function(root) {
+!function(meta) {
 
-  'use strict';
-
-  var meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+  'use strict'
 
   /**
    * @class Animation
@@ -59,20 +56,20 @@
   var Animation = function() {
     var frames_ = {},
         tweens_ = [],
-        data_ = {};
+        data_ = {}
 
     // take a base frame and apply tweens on top of it
     var apply_tweens = function(frame, tweens, index) {
-      if (!tweens || meta.undef(index)) return frame;
-      var merged = meta.mix({}, frame);
+      if (!tweens || meta.undef(index)) return frame
+      var merged = meta.mix({}, frame)
 
       tweens.forEach(function(t) {
-          var f = t.tween.call(this, index);
-          meta.mix(merged, f);
-          }, this);
+          var f = t.tween.call(this, index)
+          meta.mix(merged, f)
+          }, this)
 
-      return merged;
-    };
+      return merged
+    }
 
     /**
      * @method putFrame
@@ -93,12 +90,12 @@
      *  thisArg
      */
     this.putFrame = function(index, data) {
-      if (meta.undef(index) || !data) return this;
+      if (meta.undef(index) || !data) return this
      
-      frames_[index] = meta.declareSafely(frames_[index], data);
+      frames_[index] = meta.declareSafely(frames_[index], data)
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method getFrame
@@ -118,14 +115,14 @@
      * @return Object
      */
     this.getFrame = function(index) {
-      if (meta.undef(index)) return null;
+      if (meta.undef(index)) return null
       var f = frames_[index] || {},
           intersecting_tweens = tweens_.filter(function(t) {
-              return meta.segment.includes(t.segment, index);
-              });
+              return meta.segment.includes(t.segment, index)
+              })
 
-      return apply_tweens(f, intersecting_tweens, index);
-    };
+      return apply_tweens(f, intersecting_tweens, index)
+    }
 
     /**
      * @method deleteFrame
@@ -146,9 +143,9 @@
      *  thisArg
      */
     this.deleteFrame = function(index) {
-      delete frames_[index];
-      return this;
-    };
+      delete frames_[index]
+      return this
+    }
 
     /**
      * @method applyTween
@@ -190,26 +187,26 @@
      *  thisArg
      */
     this.applyTween = function(tween, segment) {
-      if (!segment) segment = meta.segment.ALWAYS;
-      if (!tween) throw new meta.exception.InvalidParameterException();
+      if (!segment) segment = meta.segment.ALWAYS
+      if (!tween) throw new meta.exception.InvalidParameterException()
       if (arguments.length < 4) {
         if (arguments.length < 3) {
-          arguments[2] = this.getFrame(segment[0]);
+          arguments[2] = this.getFrame(segment[0])
         }
-        arguments[3] = this.getFrame(segment[1]);
+        arguments[3] = this.getFrame(segment[1])
       }
       var keyframes = meta.args(arguments).slice(2),
-          fixed = tween.fix.bind(this, segment).apply(this, keyframes);
-      if (!fixed) return this;
-      if (segment[0] === segment[1]) return this;
+          fixed = tween.fix.bind(this, segment).apply(this, keyframes)
+      if (!fixed) return this
+      if (segment[0] === segment[1]) return this
 
       tweens_.push({
           segment: segment,
           tween: fixed
-          });
+          })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method undoTweens
@@ -233,19 +230,19 @@
      * thisArg
      */
     this.undoTweens = function(segment) {
-      if (!segment) return this;
+      if (!segment) return this
 
       tweens_.forEach(function(t, i, array) {
           if (meta.segment.intersects(t.segment, segment))
-            delete array[i];
-          });
+            delete array[i]
+          })
 
-      return this;
-    };
-  };
+      return this
+    }
+  }
 
   meta.mixSafely(meta, {
     Animation: Animation
-  });
+  })
 
-}(this);
+}(this.meta2d);

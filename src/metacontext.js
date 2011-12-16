@@ -1,33 +1,30 @@
-/** metacontext.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/metacontext.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function() {
-  'use strict';
-  var root = this,
-      meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+!function(meta) {
 
-  var ENTITY_COUNT = 0;
+  'use strict'
+
+  var ENTITY_COUNT = 0
 
   /**
    * @class MetaContext
@@ -46,9 +43,9 @@
    */
   var MetaContext = function(node, options) {
     if (meta.isString(node))
-      node = document.getElementById(node);
+      node = document.getElementById(node)
     if (!node)
-      throw new meta.exception.InvalidParameterException();
+      throw new meta.exception.InvalidParameterException()
 
     var parent_,
         options_ = options,
@@ -66,36 +63,36 @@
         mouse_ = [0, 0],
         w_ = options_ && options_.w,
         h_ = options_ && options_.h,
-        canvas_ = void 0;
+        canvas_ = void 0
 
     // @private
     var getActiveLayer_ = function() {
-      var layer = layers_[activeLayer_];
+      var layer = layers_[activeLayer_]
       if (!layer)
-        throw new meta.exception.NoLayerException();
-      return layer;
-    };
+        throw new meta.exception.NoLayerException()
+      return layer
+    }
 
     /**
      * @method getWidth
      */
     this.getWidth = function() {
-      return w_;
-    };
+      return w_
+    }
 
     /**
      * @method getHeight
      */
     this.getHeight = function() {
-      return h_;
-    };
+      return h_
+    }
 
     /**
      * @method getRootNode
      */
     this.getRootNode = function() {
-      return parent_;
-    };
+      return parent_
+    }
 
     /**
      * @method camera
@@ -108,8 +105,8 @@
      */
     this.camera = function(x, y) {
       if (meta.undef(x) || meta.undef(y)) return cameraPos_
-      return cameraPos_ = [x, y];
-    };
+      return cameraPos_ = [x, y]
+    }
 
     /**
      * @method cursor
@@ -119,9 +116,9 @@
      * @return
      */
     this.cursor = function(pos) {
-      if (!pos) return cursorPos_;
-      return cursorPos_ = pos.slice(0);
-    };
+      if (!pos) return cursorPos_
+      return cursorPos_ = pos.slice(0)
+    }
 
     /**
      * @method put
@@ -138,25 +135,25 @@
      * @return entity
      */
     this.put = function(tags, options) {
-      if (meta.isString(tags)) tags = tags.split(' ');
-      tags.push('*');
+      if (meta.isString(tags)) tags = tags.split(' ')
+      tags.push('*')
       var l = getActiveLayer_(),
           e = meta.mixSafely({
             id: ENTITY_COUNT++,
             tags: tags,
-            layer: l}, options);
+            layer: l}, options)
 
-      meta.mixSafely(e, {model: {}});
+      meta.mixSafely(e, {model: {}})
       tags.forEach(function(t) {
-          var es = tags_[t];
-          if (meta.undef(es)) es = tags_[t] = {};
-          es[e.id] = e;
-          });
+          var es = tags_[t]
+          if (meta.undef(es)) es = tags_[t] = {}
+          es[e.id] = e
+          })
 
-      l.put(e);
+      l.put(e)
             
-      return e;
-    };
+      return e
+    }
 
     /**
      * @method array
@@ -168,16 +165,16 @@
     this.array = function(n, tags, options) {
       var e = {
         children: []
-      };
-
-      while (n--) {
-        options.child = n;
-        options.parent = e;
-        e.children.push(this.put(tags, options));
       }
 
-      return this.put(tags, e);
-    };
+      while (n--) {
+        options.child = n
+        options.parent = e
+        e.children.push(this.put(tags, options))
+      }
+
+      return this.put(tags, e)
+    }
 
     /**
      * @method select
@@ -190,17 +187,17 @@
      */
     this.select = function() {
       var sel = {},
-          tags = meta.args(arguments);
+          tags = meta.args(arguments)
 
       tags.forEach(function(t) {
-          if (meta.isString(t)) t = t.split(' ');
+          if (meta.isString(t)) t = t.split(' ')
           t.forEach(function(tag) {
-              meta.mixSafely(sel, tags_[tag]);
-              });
-          });
+              meta.mixSafely(sel, tags_[tag])
+              })
+          })
       
-      return Object.keys(sel).map(function(id) {return sel[id];});
-    };
+      return Object.keys(sel).map(function(id) {return sel[id]})
+    }
 
     /**
      * @method remove
@@ -213,18 +210,18 @@
      *  Return the entities that were removed.
      */
     this.remove = function() {
-      var es = this.select.apply(this, arguments);
+      var es = this.select.apply(this, arguments)
 
       es.forEach(function(e) {
           e.tags.forEach(function(tag) {
-              delete tags_[tag][e.id];
+              delete tags_[tag][e.id]
               if (Object.keys(tags_[tag]).length === 0)
-                delete tags_[tag];
-              });
-          });
+                delete tags_[tag]
+              })
+          })
 
-      return es;
-    };
+      return es
+    }
 
     /**
      * @method layer
@@ -239,11 +236,11 @@
      */
     this.layer = function(name) {
       if (! (name in layers_)) {
-        layers_[name] = new meta.Layer(this, options_);
+        layers_[name] = new meta.Layer(this, options_)
       }
-      activeLayer_ = name;
-      return this;
-    };
+      activeLayer_ = name
+      return this
+    }
 
     /**
      * @method removeLayer
@@ -256,9 +253,9 @@
      *  thisArg
      */
     this.removeLayer = function(name) {
-      delete layers_[name];
-      return this;
-    };
+      delete layers_[name]
+      return this
+    }
 
     /**
      * @method resize
@@ -274,133 +271,133 @@
      */
     this.resize = function(w, h) {
       if (meta.undef(w) || meta.undef(h))
-        throw new meta.exception.InvalidParameterException();
+        throw new meta.exception.InvalidParameterException()
       
       // Do nothing if parent is set and dimensions haven't changed.
-      if (w_ === w && h_ === h  && parent_) return this;
+      if (w_ === w && h_ === h  && parent_) return this
 
-      w_ = w;
-      h_ = h;
+      w_ = w
+      h_ = h
 
-      if (!parent_) parent_ = document.createElement('div');
+      if (!parent_) parent_ = document.createElement('div')
 
       var style = canvas_ ?
         '' :
         'width: ' + w + 'px; ' +
         'height: ' + h + 'px; ' +
-        'position: relative;';
+        'position: relative;'
 
-      parent_.setAttribute('style', style);
+      parent_.setAttribute('style', style)
 
       Object.keys(layers_).forEach(function(l) {
-          layers_[l].resize(w, h);
-          }, this);
+          layers_[l].resize(w, h)
+          }, this)
 
-      return this;
-    };
+      return this
+    }
 
     // Defer to active layer.
     var defer_to_layer = function(method) {
       var f = function() {
-        var layer = getActiveLayer_();
-        return layer[method].apply(layer, arguments);
-      };
-      this[method] = f.bind(this);
-    };
+        var layer = getActiveLayer_()
+        return layer[method].apply(layer, arguments)
+      }
+      this[method] = f.bind(this)
+    }
 
     var defer_to_all_layers = function(method) {
       var f = function() {
-        var args = arguments;
+        var args = arguments
         Object.keys(layers_).forEach(function(l) {
             layers_[l][method.slice(0, -3)].apply(layers_[l], args)
-             });
-      };
-      this[method] = f.bind(this);
-    };
+             })
+      }
+      this[method] = f.bind(this)
+    }
 
     // Invoke Context2d method of active layer.
     var invoke_in_layer_context = function(method) {
       var f = function() {
         var layer = getActiveLayer_(),
-            ctx = layer.getContext();
-        return ctx[method].apply(ctx, arguments);
-      };
-      this[method] = f.bind(this);
-    };
+            ctx = layer.getContext()
+        return ctx[method].apply(ctx, arguments)
+      }
+      this[method] = f.bind(this)
+    }
 
-    [ // Rendering methods on active layer.
-      'crop',
-      'erase',
-      'draw',
-      'flip',
-      'prune',
-      'render',
-      'memo',
-      'repaint',
-      'parallax',
-      'z',
-      'index',
-      'reindex',
-      'makeDrawing',
-      'getContext'
-    ].forEach(defer_to_layer, this);
+    // Rendering methods on active layer.
+    ;['crop'
+    , 'erase'
+    , 'draw'
+    , 'flip'
+    , 'prune'
+    , 'render'
+    , 'memo'
+    , 'repaint'
+    , 'parallax'
+    , 'z'
+    , 'index'
+    , 'reindex'
+    , 'makeDrawing'
+    , 'getContext'
+    ].forEach(defer_to_layer, this)
 
-    [ // Rendering methods on all layers.
-      'cropAll',
-      'eraseAll',
-      'drawAll',
-      'flipAll',
-      'pruneAll',
-      'renderAll',
-      'memoAll',
-      'repaintAll'
-    ].forEach(defer_to_all_layers, this);
+    // Rendering methods on all layers.
+    ;['cropAll'
+    , 'eraseAll'
+    , 'drawAll'
+    , 'flipAll'
+    , 'pruneAll'
+    , 'renderAll'
+    , 'memoAll'
+    , 'repaintAll'
+    ].forEach(defer_to_all_layers, this)
 
-    [ // Context2d methods.
-      'save',
-      'restore',
-      'scale',
-      'rotate',
-      'translate',
-      'transform',
-      'setTransform',
-      'createLinearGradient',
-      'createRadialGradient',
-      'createPattern',
-      'clearRect',
-      'fillRect',
-      'strokeRect',
-      'beginPath',
-      'closePath',
-      'moveTo',
-      'lineTo',
-      'quadraticCurveTo',
-      'arcTo',
-      'rect',
-      'arc',
-      'fill',
-      'stroke',
-      'clip',
-      'isPointInPath',
-      'drawFocusRing',
-      'caretBlinkRate',
-      'setCaretSelectionRect',
-      'fillText',
-      'strokeText',
-      'measureText',
-      'drawImage',
-      'createImageData',
-      'getImageData',
-      'putImageData'
-    ].forEach(invoke_in_layer_context, this);
+    // Context2d methods.
+    ;['save'
+    , 'restore'
+    , 'scale'
+    , 'rotate'
+    , 'translate'
+    , 'transform'
+    , 'setTransform'
+    , 'createLinearGradient'
+    , 'createRadialGradient'
+    , 'createPattern'
+    , 'clearRect'
+    , 'fillRect'
+    , 'strokeRect'
+    , 'beginPath'
+    , 'closePath'
+    , 'moveTo'
+    , 'lineTo'
+    , 'quadraticCurveTo'
+    , 'arcTo'
+    , 'rect'
+    , 'arc'
+    , 'fill'
+    , 'stroke'
+    , 'clip'
+    , 'isPointInPath'
+    , 'drawFocusRing'
+    , 'caretBlinkRate'
+    , 'setCaretSelectionRect'
+    , 'fillText'
+    , 'strokeText'
+    , 'measureText'
+    , 'drawImage'
+    , 'createImageData'
+    , 'getImageData'
+    , 'putImageData'
+    ].forEach(invoke_in_layer_context, this)
 
     var get = function(attribute) {
-      return getActiveLayer_().getContext()[attribute];
-    };
+      return getActiveLayer_().getContext()[attribute]
+    }
 
     var set = function(attribute, value) {
-      getActiveLayer_().getContext()[attribute] = value;
-    };
+      getActiveLayer_().getContext()[attribute] = value
+    }
 
     // Define getter/setter for writable Context2d properties.
     var layer_context_attribute = function(attribute) {
@@ -408,41 +405,41 @@
           get: get.bind(this, attribute),
           set: set.bind(this, attribute),
           enumerable: true,
-          });
-    };
+          })
+    }
 
-    [ // Context2d attributes layer-multiplexed via getters/setters.
-      'globalAlpha',
-      'globalCompositeOperation',
-      'strokeStyle',
-      'fillStyle',
-      'lineWidth',
-      'lineCap',
-      'lineJoin',
-      'miterLimit',
-      'shadowOffsetX',
-      'shadowOffsetY',
-      'shadowBlur',
-      'shadowColor',
-      'font',
-      'textAlign',
-      'textBaseline'
-    ].forEach(layer_context_attribute, this);
+    // Context2d attributes layer-multiplexed via getters/setters.
+    ;['globalAlpha'
+    , 'globalCompositeOperation'
+    , 'strokeStyle'
+    , 'fillStyle'
+    , 'lineWidth'
+    , 'lineCap'
+    , 'lineJoin'
+    , 'miterLimit'
+    , 'shadowOffsetX'
+    , 'shadowOffsetY'
+    , 'shadowBlur'
+    , 'shadowColor'
+    , 'font'
+    , 'textAlign'
+    , 'textBaseline'
+    ].forEach(layer_context_attribute, this)
 
     // read-only 'canvas' attribute of Context2d.
     Object.defineProperty(this, 'canvas', {
         get: get.bind(this, 'canvas'),
         set: void 0,
         enumerable: true
-        });
+        })
 
     /**
      * @method getAllLayers
      * @return Array<<Layer>>
      */
     this.getAllLayers = function() {
-      return Object.keys(layers_).map(function(k) {return layers_[k];});
-    };
+      return Object.keys(layers_).map(function(k) {return layers_[k]})
+    }
 
     // pick() method concats all layer output.
     /**
@@ -464,245 +461,245 @@
       var ls = this.getAllLayers().map(function(layer) {return {
           z: layer.z(),
           es: layer.pick(x, y)
-          };});
+          }})
 
       // 4 potential outputs based on sorted/layered options
       if (sorted) {
         if (layered) {
           // sorted by layer.z, then e.z
           ls.forEach(function(l) {
-              l.es = meta.zsort(l.es).reverse();
-              });
-          ls = meta.zsort(ls).reverse();
-          ls = ls.map(function(l) {return l.es;});
-          ls = ls.reduce(meta.concat);
+              l.es = meta.zsort(l.es).reverse()
+              })
+          ls = meta.zsort(ls).reverse()
+          ls = ls.map(function(l) {return l.es})
+          ls = ls.reduce(meta.concat)
         } else {
           // sorted by e.z across layers
-          ls = ls.map(function(l) {return l.es;});
-          ls = ls.reduce(meta.concat);
-          ls = meta.zsort(ls).reverse();
+          ls = ls.map(function(l) {return l.es})
+          ls = ls.reduce(meta.concat)
+          ls = meta.zsort(ls).reverse()
         }
       } else {
         if (layered) {
-          ls = meta.zsort(ls).reverse();
+          ls = meta.zsort(ls).reverse()
         }
-        ls = ls.map(function(l) {return l.es});
-        ls = ls.reduce(meta.concat, []);
+        ls = ls.map(function(l) {return l.es})
+        ls = ls.reduce(meta.concat, [])
       }
 
-      return ls;
-    };
+      return ls
+    }
 
     var position = function(element) {
-      if (!element.offsetParent) return [0, 0];
+      if (!element.offsetParent) return [0, 0]
       return meta.math.vector.plus(
           position(element.offsetParent),
-          [element.offsetLeft, element.offsetTop]);
-    };
+          [element.offsetLeft, element.offsetTop])
+    }
 
     var mouse_pos = function(event) {
       var offset = position(parent_),
-          mouse = [event.pageX, event.pageY];
-      return meta.math.vector.minus(mouse, offset);
+          mouse = [event.pageX, event.pageY]
+      return meta.math.vector.minus(mouse, offset)
     }
 
     var handle_click = function(event) {
       var mouse = mouse_pos(event),
-          hits = this.pick.call(this, mouse[0], mouse[1], true, true);
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true)
 
-      if (!hits.length) return;
+      if (!hits.length) return
 
-      var top = hits[0];
-      if (!top.onclick) return;
+      var top = hits[0]
+      if (!top.onclick) return
 
-      top.onclick.apply(top, mouse);
-    };
+      top.onclick.apply(top, mouse)
+    }
 
     var handle_dblclick = function(event) {
       var mouse = mouse_pos(event),
-          hits = this.pick.call(this, mouse[0], mouse[1], true, true);
+          hits = this.pick.call(this, mouse[0], mouse[1], true, true)
 
-      if (!hits.length) return;
+      if (!hits.length) return
 
-      var top = hits[0];
-      if (!top.ondblclick) return;
+      var top = hits[0]
+      if (!top.ondblclick) return
 
-      top.ondblclick.apply(top, mouse);
-    };
+      top.ondblclick.apply(top, mouse)
+    }
 
     var handle_mousemove = function(event) {
       var mouse = mouse_pos(event),
           diff = meta.math.vector.minus(mouse, mouse_),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true),
-          top;
+          top
 
-      if (hits.length) top = hits[0];
+      if (hits.length) top = hits[0]
 
-      this.cursor(mouse);
+      this.cursor(mouse)
 
       // trigger mouseout event
       if (top != hover_ && hover_ && hover_.onmouseout)
-        hover_.onmouseout.apply(hover_, mouse);
+        hover_.onmouseout.apply(hover_, mouse)
 
       // trigger mouseover event
       if (top && top != hover_ && top.onmouseover)
-        top.onmouseover.apply(top, mouse);
+        top.onmouseover.apply(top, mouse)
 
       // trigger mousemove event
       if (top && top.onmousemove)
-        top.onmousemove.apply(top, mouse);
+        top.onmousemove.apply(top, mouse)
 
       // trigger drag event
       if (dragged_ && dragged_.ondrag)
-        dragged_.ondrag.call(dragged_, mouse[0], mouse[1], diff[0], diff[1]);
+        dragged_.ondrag.call(dragged_, mouse[0], mouse[1], diff[0], diff[1])
 
       // set the mouse cursor
       if (top && top.cursor) {
-        this.getRootNode().style.cursor = top.cursor;
+        this.getRootNode().style.cursor = top.cursor
       } else {
-        this.getRootNode().style.cursor = 'default';
+        this.getRootNode().style.cursor = 'default'
       }
 
-      hover_ = top;
-      mouse_ = mouse;
-    };
+      hover_ = top
+      mouse_ = mouse
+    }
 
     var handle_mousedown = function(event) {
       var mouse = mouse_pos(event),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true),
-          top;
+          top
 
       if (hits.length) {
-        top = hits[0];
+        top = hits[0]
 
         // trigger mousedown event
         if (top && top.onmousedown)
-          top.onmousedown.apply(top, mouse);
+          top.onmousedown.apply(top, mouse)
 
         if (top && top.ondrag) {
-          dragged_ = top;
+          dragged_ = top
         }
       }
 
       if (top != focus_)
-        handle_textinput_blur(event);
+        handle_textinput_blur(event)
 
-      focus_ = focus_default_ = top;
+      focus_ = focus_default_ = top
 
       if (focus_ && focus_.onfocus) {
-        handle_textinput_focus();
+        handle_textinput_focus()
       }
       
-      event.preventDefault();
-    };
+      event.preventDefault()
+    }
 
     var handle_mouseup = function(event) {
       var mouse = mouse_pos(event),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true),
-          top;
+          top
 
-      if (hits.length) top = hits[0];
+      if (hits.length) top = hits[0]
 
       // trigger mouseup event
       if (top && top.onmouseup)
-        top.onmouseup.apply(top, mouse);
+        top.onmouseup.apply(top, mouse)
 
       // trigger drop event
       if (dragged_ && dragged_.ondrop)
-        dragged_.ondrop.apply(dragged_, mouse);
+        dragged_.ondrop.apply(dragged_, mouse)
 
       // clear dragged entity
-      dragged_ = null;
-    };
+      dragged_ = null
+    }
 
     var handle_mouseout = function(event) {
-      var mouse = mouse_pos(event);
+      var mouse = mouse_pos(event)
 
       // trigger mouseout event
       if (hover_ && hover_.onmouseout)
-        hover_.onmouseout.apply(hover_, mouse);
+        hover_.onmouseout.apply(hover_, mouse)
 
       // trigger drop event
       if (dragged_ && hover_.ondrop)
-        dragged_.ondrop.apply(dragged_, mouse);
+        dragged_.ondrop.apply(dragged_, mouse)
 
       // clear dragged entity
-      dragged_ = null;
+      dragged_ = null
 
       // clear hovered entity
-      hover_ = null;
-    };
+      hover_ = null
+    }
 
     var handle_textinput = function(event) {
       // trigger textinput event
       if (focus_ && focus_.ontextinput) {
-        focus_.ontextinput.call(focus_, event, event.data);
+        focus_.ontextinput.call(focus_, event, event.data)
       }
-      textinput_.value = '';
-    };
+      textinput_.value = ''
+    }
 
     var handle_textinput_blur = function(event) {
       // trigger blur event on focused entity
       if (focus_ && focus_.onblur)
-        focus_.onblur.call(focus_);
-    };
+        focus_.onblur.call(focus_)
+    }
 
     var handle_textinput_focus = function(event) {
       if (!event) {
-        focus_ = focus_default_;
+        focus_ = focus_default_
       }
 
       if (focus_ && focus_.onfocus)
-        focus_.onfocus.call(focus_);
+        focus_.onfocus.call(focus_)
 
       if (focus_ && focus_.contentEditable) {
-        textinput_.focus();
+        textinput_.focus()
       }
-    };
+    }
 
     // Set up the injected DOM elements.
 
-    this.resize(w_, h_);
-    layers_['default'] = new meta.Layer(this, options_);
-    node.appendChild(parent_);
+    this.resize(w_, h_)
+    layers_['default'] = new meta.Layer(this, options_)
+    node.appendChild(parent_)
 
     // Listen to DOM mouse events.
 
-    parent_.addEventListener('click', handle_click.bind(this));
-    parent_.addEventListener('mousedown', handle_mousedown.bind(this));
-    parent_.addEventListener('mouseup', handle_mouseup.bind(this));
-    parent_.addEventListener('mousemove', handle_mousemove.bind(this));
-    parent_.addEventListener('mouseout', handle_mouseout.bind(this));
-    parent_.addEventListener('dblclick', handle_dblclick.bind(this));
+    parent_.addEventListener('click', handle_click.bind(this))
+    parent_.addEventListener('mousedown', handle_mousedown.bind(this))
+    parent_.addEventListener('mouseup', handle_mouseup.bind(this))
+    parent_.addEventListener('mousemove', handle_mousemove.bind(this))
+    parent_.addEventListener('mouseout', handle_mouseout.bind(this))
+    parent_.addEventListener('dblclick', handle_dblclick.bind(this))
 
     // Listen to DOM textInput event via hidden input.
 
-    textinput_ = document.createElement('input');
-    textinput_.style.position = 'fixed';
-    textinput_.style.left = '-31337px';
-    textinput_.addEventListener('textInput', handle_textinput.bind(this));
-    textinput_.addEventListener('blur', handle_textinput_blur.bind(this));
-    textinput_.addEventListener('focus', handle_textinput_focus.bind(this));
-    parent_.appendChild(textinput_);
-  };
+    textinput_ = document.createElement('input')
+    textinput_.style.position = 'fixed'
+    textinput_.style.left = '-31337px'
+    textinput_.addEventListener('textInput', handle_textinput.bind(this))
+    textinput_.addEventListener('blur', handle_textinput_blur.bind(this))
+    textinput_.addEventListener('focus', handle_textinput_focus.bind(this))
+    parent_.appendChild(textinput_)
+  }
 
   var create = function(node, options) {
     if (meta.isString(node))
-      node = document.getElementById(node);
+      node = document.getElementById(node)
     if (!node)
-      throw new meta.exception.InvalidParameterException();
+      throw new meta.exception.InvalidParameterException()
 
     options = meta.mixSafely(options, {
       w: node.clientWidth || 300,
       h: node.clientHeight || 150
-    });
+    })
 
-    return new MetaContext(node, options);
-  };
+    return new MetaContext(node, options)
+  }
 
   meta.mixSafely(meta, {
     MetaContext: MetaContext,
     create: create
-  });
+  })
 
-}).call(this);
+}(this.meta2d);

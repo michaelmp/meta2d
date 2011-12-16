@@ -1,31 +1,28 @@
-/** mask.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/lru.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function() {
-  'use strict';
-  var root = this;
-  var meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+!function(meta) {
+
+  'use strict'
 
   /**
    * @class Mask
@@ -33,8 +30,8 @@
    * @extends Modifiable<<MaskType>>
    */
   var Mask = function() {
-    meta.Modifiable.call(this, new meta.MaskType());
-  };
+    meta.Modifiable.call(this, new meta.MaskType())
+  }
 
   /**
    * @method overlaps
@@ -46,82 +43,82 @@
    * @return Boolean
    */
   Mask.prototype.overlaps = function(x, y) {
-    throw new meta.exception.InvokedAbstractMethodException();
-  };
+    throw new meta.exception.InvokedAbstractMethodException()
+  }
 
   var Opaque = function(d) {
-    this.drawing = d;
-  };
+    this.drawing = d
+  }
 
-  Opaque.prototype = new Mask();
+  Opaque.prototype = new Mask()
 
   Opaque.prototype.overlaps = function(x, y) {
     if (!this.drawing ||
         meta.math.affine.isSingular(this.drawing.transform)) {
-      return false;
+      return false
     }
 
     var t = this.drawing.transform,
         t_inv = meta.math.affine.invert(t),
-        pixel = meta.math.affine.applyToVector(t_inv, [x, y]);
+        pixel = meta.math.affine.applyToVector(t_inv, [x, y])
 
     return this.drawing.ctx.getImageData(
-        pixel[0], pixel[1], 1, 1).data[3] > 0;
-  };
+        pixel[0], pixel[1], 1, 1).data[3] > 0
+  }
 
   var opaque = function(d) {
-    return new Opaque(d);
-  };
+    return new Opaque(d)
+  }
+
+  var BBox = function(d) {
+    this.drawing = d
+  }
+
+  BBox.prototype = new Mask()
+
+  BBox.prototype.overlaps = function(x, y) {
+    if (!this.drawing) return false
+    var bounds = this.drawing.getBounds()
+    return meta.math.rect.contains(bounds, [x, y, 1, 1]) 
+  }
 
   var bbox = function(d) {
-    var o = function() {};
+    return new BBox(d)
+  }
 
-    o.prototype = new Mask();
+  var Yes = function() {}
 
-    o.prototype.overlaps = function(x, y) {
-      if (!d) return false;
+  Yes.prototype = new Mask()
 
-      var bounds = d.getBounds();
-
-      return meta.math.rect.contains(bounds, [x, y, 1, 1]); 
-    };
-
-    return new o();
-  };
+  Yes.prototype.overlaps = function() {
+    return true
+  }
 
   var yes = function() {
-    var o = function() {};
+    return new Yes()
+  }
 
-    o.prototype = new Mask();
+  var No = function() {}
 
-    o.prototype.overlaps = function() {
-      return true;
-    };
+  No.prototype = new Mask()
 
-    return new o();
-  };
+  No.prototype.overlaps = function() {
+    return false
+  }
 
   var no = function() {
-    var o = function() {};
-
-    o.prototype = new Mask();
-
-    o.prototype.overlaps = function() {
-      return false;
-    };
-
-    return new o();
-  };
+    return new No()
+  }
 
   meta.mixSafely(meta, {
     Mask: Mask
-  });
+  })
 
   meta.mask = meta.declareSafely(meta.mask, {
     opaque: opaque,
     bbox: bbox,
     yes: yes,
     no: no
-  });
+  })
 
-}).call(this);
+}(this.meta2d);

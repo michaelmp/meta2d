@@ -1,31 +1,28 @@
-/** projection.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/projection.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function() {
-  'use strict';
-  var root = this;
-  var meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+!function(meta) {
+
+  'use strict'
 
   /**
    * @class Projection
@@ -52,8 +49,8 @@
    *  methods.
    */
   var Projection = function() {
-    meta.Modifiable.call(this, new meta.ProjectionType());
-  };
+    meta.Modifiable.call(this, new meta.ProjectionType())
+  }
 
   /**
    * @method forward
@@ -69,8 +66,8 @@
    * @return Array<<Number>>
    */
   Projection.prototype.forward = function(v) {
-    throw new meta.exception.InvokedAbstractMethodException();
-  };
+    throw new meta.exception.InvokedAbstractMethodException()
+  }
 
   /**
    * @method reverse
@@ -86,105 +83,105 @@
    * @return Array<<Number>>
    */
   Projection.prototype.reverse = function(v) {
-    throw new meta.exception.InvokedAbstractMethodException();
-  };
+    throw new meta.exception.InvokedAbstractMethodException()
+  }
 
   // @return [meta2d::Projection]
   var flat = function() {
-    var o = function() {};
+    var o = function() {}
 
-    o.prototype = new Projection();
+    o.prototype = new Projection()
     o.prototype.forward = function(v) {
-      return v;
-    };
+      return v
+    }
     o.prototype.reverse = function(v) {
-      return v;
-    };
+      return v
+    }
 
-    return new o();
-  };
+    return new o()
+  }
 
   // @return [meta2d::Projection]
   var iso_from_2d = function(w, h) {
-    if (!w || !h) throw new meta.exception.InvalidParameterException();
-    var o = function() {};
+    if (!w || !h) throw new meta.exception.InvalidParameterException()
+    var o = function() {}
 
-    o.prototype = new Projection();
+    o.prototype = new Projection()
     o.prototype.forward = function(v) {
       return [
         (v[0] - v[1]) * 0.5 * w,
         (v[1] + v[0]) * 0.5 * h
-      ];
-    };
+      ]
+    }
     o.prototype.reverse = function(v) {
       var a = 2 * v[0] / w,
           b = 2 * v[1] / h,
           x = (a + b) / 2,
-          y = b - x;
-      return [x, y];
-    };
+          y = b - x
+      return [x, y]
+    }
 
-    return new o();
-  };
+    return new o()
+  }
 
   // @return [meta2d::Modifier<meta2d.ProjectionType>]
   var shift = function(v_shift) {
     var o = function() {
-      meta.Modifier.call(this, meta.ProjectionType);
+      meta.Modifier.call(this, meta.ProjectionType)
       this.modify = function(projection) {
-        projection.forward = this.wrapForward(projection.forward);
-        projection.reverse = this.wrapReverse(projection.reverse);
-      };
-    };
+        projection.forward = this.wrapForward(projection.forward)
+        projection.reverse = this.wrapReverse(projection.reverse)
+      }
+    }
 
     o.prototype.wrapForward = function(f) {
       return function(v) {
-        return meta.math.vector.plus(f.call(this, v), v_shift);
-      };
-    };
+        return meta.math.vector.plus(f.call(this, v), v_shift)
+      }
+    }
     o.prototype.wrapReverse = function(f) {
       return function(v) {
-        return f.call(this, meta.math.vector.minus(v, v_shift));
-      };
-    };
+        return f.call(this, meta.math.vector.minus(v, v_shift))
+      }
+    }
 
-    return new o();
-  };
+    return new o()
+  }
 
   // @return [meta2d::Modifier<meta2d.ProjectionType>]
   var scale = function(v_scale) {
     var o = function() {
-      meta.Modifier.call(this, meta.ProjectionType);
+      meta.Modifier.call(this, meta.ProjectionType)
       this.modify = function(projection) {
-        projection.forward = this.wrapForward(projection.forward);
-        projection.reverse = this.wrapReverse(projection.reverse);
-      };
-    };
+        projection.forward = this.wrapForward(projection.forward)
+        projection.reverse = this.wrapReverse(projection.reverse)
+      }
+    }
 
     o.prototype.wrapForward = function(f) {
       return function(v) {
-        return meta.math.vector.mult(f.call(this, v), v_scale);
-      };
-    };
+        return meta.math.vector.mult(f.call(this, v), v_scale)
+      }
+    }
     o.prototype.wrapReverse = function(f) {
       return function(v) {
         return f.call(this, meta.math.vector.mult(
-              v, meta.math.vector.invert(v_scale)));
-      };
-    };
+              v, meta.math.vector.invert(v_scale)))
+      }
+    }
 
-    return new o();
-  };
+    return new o()
+  }
 
   meta.mixSafely(meta, {
     Projection: Projection
-  });
+  })
 
   meta.projection = meta.declareSafely(meta.projection, {
     flat: flat,
     iso2d: iso_from_2d,
     shift: shift,
     scale: scale
-  });
+  })
 
-}).call(this);
+}(this.meta2d);

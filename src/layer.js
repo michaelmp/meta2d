@@ -1,41 +1,38 @@
-/** layer.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/layer.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function() {
-  'use strict';
-  var root = this;
-  var meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+!function(meta) {
 
-  var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;';
+  'use strict'
+
+  var CANVAS_STYLE = 'position: absolute; left:0px; top:0px;'
 
   var mask = function(e, x, y) {
-    if (e.mask) return e.mask.overlaps(x, y);
-    if (!e.onmask) return false;
-    var m = e.onmask.call(e);
-    if (!m) return false;
-    return m.overlaps(x, y);
-  };
+    if (e.mask) return e.mask.overlaps(x, y)
+    if (!e.onmask) return false
+    var m = e.onmask.call(e)
+    if (!m) return false
+    return m.overlaps(x, y)
+  }
 
   /**
    * @class Layer
@@ -49,7 +46,7 @@
    */
   var Layer = function(mcx, options) {
     if (!options || !options.w || !options.h)
-      throw new meta.exception.InvalidParameterException();
+      throw new meta.exception.InvalidParameterException()
 
     var layer_ = this,
         entities_ = [],
@@ -59,7 +56,7 @@
         treehash_ = {},
         zorder_ = (options && options.z) || 0,
         memos_ = new meta.RCache((options && options.rblocks)),
-        ctx_;
+        ctx_
 
     // Allow entity and child entites to draw directly.
     // Return array of all drawings to render()
@@ -67,53 +64,53 @@
       var drawings = [],
           children = e.children || [],
           d,
-          font = [];
+          font = []
 
-      children = meta.zsort(children);
+      children = meta.zsort(children)
 
       // Transformations do not affect sibling entities.
-      ctx_.save();
+      ctx_.save()
 
       // Apply entity transformations.
-      if (e.pos) ctx_.translate(e.pos[0], e.pos[1]);
-      if (meta.def(e.angle)) ctx_.rotate(e.angle);
-      if (meta.def(e.zoom)) ctx_.scale(e.zoom, e.zoom);
+      if (e.pos) ctx_.translate(e.pos[0], e.pos[1])
+      if (meta.def(e.angle)) ctx_.rotate(e.angle)
+      if (meta.def(e.zoom)) ctx_.scale(e.zoom, e.zoom)
       
       // Global state properties.
-      if (meta.def(e.alpha)) ctx_.globalAlpha = e.alpha;
-      if (meta.def(e.composite)) ctx_.globalCompositeOperation = e.composite;
+      if (meta.def(e.alpha)) ctx_.globalAlpha = e.alpha
+      if (meta.def(e.composite)) ctx_.globalCompositeOperation = e.composite
 
       // Set the font.
       if (e.font) {
         font.push(e.font)
       } else {
-        if (e.fontstyle) font.push(e.fontstyle);
-        if (e.fontweight) font.push(e.fontweight);
-        if (e.fontsize) font.push(e.fontsize);
-        if (e.fontfamily) font.push(e.fontfamily);
+        if (e.fontstyle) font.push(e.fontstyle)
+        if (e.fontweight) font.push(e.fontweight)
+        if (e.fontsize) font.push(e.fontsize)
+        if (e.fontfamily) font.push(e.fontfamily)
       }
-      ctx_.font = font.join(' ');
+      ctx_.font = font.join(' ')
 
       if (e.draw) {
-        drawings.push(e.draw);
+        drawings.push(e.draw)
       } else if (e.ondraw) {
-        d = e.ondraw.call(e, ctx_, layer_);
-        if (d) drawings.push(d);
+        d = e.ondraw.call(e, ctx_, layer_)
+        if (d) drawings.push(d)
       }
 
       // Recurse on any children.
       children.forEach(function(e) {
-        drawings = drawings.concat(recursive_render(e));
-      });
+        drawings = drawings.concat(recursive_render(e))
+      })
 
-      ctx_.restore();
+      ctx_.restore()
 
       // Affect sibling position.
       if (e.parent && e.offset) {
-        ctx_.translate(e.offset[0], e.offset[1]);
+        ctx_.translate(e.offset[0], e.offset[1])
       }
 
-      return drawings;
+      return drawings
     }
 
     /**
@@ -132,29 +129,29 @@
         y || 0,
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
       var es = rtree_.search(rect).concat(entities_),
-          drawings = [];
+          drawings = []
       
       // Only start with top-level entities. Recurse to children.
-      es = es.filter(function(e) {return !e.parent;});
+      es = es.filter(function(e) {return !e.parent})
 
       // Sort by 'z' property.
-      es = meta.zsort(es);
+      es = meta.zsort(es)
 
       // Call each entity's ondraw method, allowing direct rendering onto
       // canvas, or return a drawing to use with cache.
       es.forEach(function(e) {
-          drawings = drawings.concat(recursive_render(e));
-          });
+          drawings = drawings.concat(recursive_render(e))
+          })
 
       // Draw drawings onto any memo blocks.
       drawings.forEach(function(d) {
-          layer_.draw(d);
-          });
+          layer_.draw(d)
+          })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method makeDrawing
@@ -164,15 +161,15 @@
      * @return Drawing
      */
     this.makeDrawing = function() {
-      var d = new meta.Drawing(arguments[0], arguments[1]);
+      var d = new meta.Drawing(arguments[0], arguments[1])
 
       // Copy certain properties from layer context.
-      d.ctx.globalAlpha = ctx_.globalAlpha;
-      d.ctx.globalCompositeOperation = ctx_.globalCompositeOperation;
-      d.transform = ctx_.getTransform();
+      d.ctx.globalAlpha = ctx_.globalAlpha
+      d.ctx.globalCompositeOperation = ctx_.globalCompositeOperation
+      d.transform = ctx_.getTransform()
 
-      return d;
-    };
+      return d
+    }
 
     /**
      * @method draw
@@ -181,28 +178,28 @@
      *  thisArg
      */
     this.draw = function(d) {
-      var bound = d.getBounds();
+      var bound = d.getBounds()
 
       memos_.search(bound).forEach(function(b) {
-          b.ctx.save();
+          b.ctx.save()
 
           // Draw to block-local coordinates.
-          b.ctx.translate(-b.rect[0], -b.rect[1]);
+          b.ctx.translate(-b.rect[0], -b.rect[1])
 
           // Apply the drawing's transformation.
-          b.ctx.transform.apply(b.ctx, d.transform);
+          b.ctx.transform.apply(b.ctx, d.transform)
 
           // Apply alpha.
-          b.ctx.globalAlpha = d.ctx.globalAlpha;
-          b.ctx.globalCompositeOperation = d.ctx.globalCompositeOperation;
+          b.ctx.globalAlpha = d.ctx.globalAlpha
+          b.ctx.globalCompositeOperation = d.ctx.globalCompositeOperation
 
-          b.ctx.drawImage(d.ctx.canvas, 0, 0);
+          b.ctx.drawImage(d.ctx.canvas, 0, 0)
 
-          b.ctx.restore();
-          });
+          b.ctx.restore()
+          })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method memo
@@ -221,15 +218,15 @@
         y || 0,
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
 
       memos_.add(rect, {
         ctx: new meta.Context(rect[2], rect[3]),
         rect: rect
-      });
+      })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method flip
@@ -269,29 +266,29 @@
         (y || 0) + mcx.camera()[1],
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
 
       memos_.search(rect).forEach(function(b) {
-          var itx = meta.math.rect.intersect(b.rect, rect);
-          if (!itx) return;
+          var itx = meta.math.rect.intersect(b.rect, rect)
+          if (!itx) return
 
           // Make sure flipped edges are consistent.
-          itx = itx.map(meta.floor);
+          itx = itx.map(meta.floor)
 
-          ctx_.save();
+          ctx_.save()
 
           // Ignore the transformation state in use by user.
-          ctx_.setTransform.apply(ctx_, meta.math.affine.identity());
+          ctx_.setTransform.apply(ctx_, meta.math.affine.identity())
 
           // Erase the target area.
           ctx_.clearRect(
             itx[0] - mcx.camera()[0],
             itx[1] - mcx.camera()[1],
             itx[2],
-            itx[3]);
+            itx[3])
 
           // Copy the source area.
-          ctx_.globalCompositeOperation = 'source-over';
+          ctx_.globalCompositeOperation = 'source-over'
           ctx_.drawImage(
             b.ctx.canvas,
             itx[0] - b.rect[0],
@@ -301,13 +298,13 @@
             itx[0] - mcx.camera()[0],
             itx[1] - mcx.camera()[1],
             itx[2],
-            itx[3]);
+            itx[3])
 
-          ctx_.restore();
-          });
+          ctx_.restore()
+          })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method erase
@@ -326,20 +323,20 @@
         y || 0,
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
 
       memos_.search(rect).forEach(function(b) {
-          var itx = meta.math.rect.intersect(b.rect, rect);
-          if (!itx) return;
+          var itx = meta.math.rect.intersect(b.rect, rect)
+          if (!itx) return
           b.ctx.clearRect(
             meta.round(itx[0] - b.rect[0]),
             meta.round(itx[1] - b.rect[1]),
             meta.round(itx[2]),
-            meta.round(itx[3]));
-          });
+            meta.round(itx[3]))
+          })
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method prune
@@ -354,8 +351,8 @@
      */
     this.prune = function(x, y, w, h) {
       if (arguments.length < 4) {
-        memos_ = new meta.RCache((options && options.rblocks));
-        return this;
+        memos_ = new meta.RCache((options && options.rblocks))
+        return this
       }
 
       var rect = [
@@ -363,12 +360,12 @@
         y || 0,
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
 
-      memos_.pluckInside(rect);
+      memos_.pluckInside(rect)
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method crop
@@ -387,12 +384,12 @@
         y || 0,
         w || this.getWidth(),
         h || this.getHeight()
-      ];
+      ]
 
-      memos_.pluckOutside(rect);
+      memos_.pluckOutside(rect)
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method repaint
@@ -402,31 +399,31 @@
      * @return [Layer]
      */
     this.repaint = function() {
-      var d, b;
+      var d, b
       if (arguments.length === 1) {
-        d = arguments[0].draw;
+        d = arguments[0].draw
         if (d) {
-          b = d.getBounds();
-          delete arguments[0].draw;
-          this.erase.apply(this, b);
-          this.render.apply(this, b);
-          this.flip.apply(this, b);
+          b = d.getBounds()
+          delete arguments[0].draw
+          this.erase.apply(this, b)
+          this.render.apply(this, b)
+          this.flip.apply(this, b)
         } else {
-          this.erase(0, 0, this.getWidth(), this.getHeight());
-          this.render(0, 0, this.getWidth(), this.getHeight());
-          this.flip(0, 0, this.getWidth(), this.getHeight());
+          this.erase(0, 0, this.getWidth(), this.getHeight())
+          this.render(0, 0, this.getWidth(), this.getHeight())
+          this.flip(0, 0, this.getWidth(), this.getHeight())
         }
       } else if (arguments.length === 4) {
-        this.erase.apply(this, arguments);
-        this.render.apply(this, arguments);
-        this.flip.apply(this, arguments);
+        this.erase.apply(this, arguments)
+        this.render.apply(this, arguments)
+        this.flip.apply(this, arguments)
       } else {
-        this.erase(0, 0, this.getWidth(), this.getHeight());
-        this.render(0, 0, this.getWidth(), this.getHeight());
-        this.flip(0, 0, this.getWidth(), this.getHeight());
+        this.erase(0, 0, this.getWidth(), this.getHeight())
+        this.render(0, 0, this.getWidth(), this.getHeight())
+        this.flip(0, 0, this.getWidth(), this.getHeight())
       }
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method resize
@@ -442,35 +439,35 @@
      *  thisArg
      */
     this.resize = function(w, h) {
-      var t, bitmap;
+      var t, bitmap
 
       // Remove the old canvas from the DOM.
       if (ctx_) {
-        parent_.removeChild(ctx_.canvas);
+        parent_.removeChild(ctx_.canvas)
         t = ctx_.getTransform(),
-        bitmap = ctx_.canvas;
+        bitmap = ctx_.canvas
       }
 
       // Create a new canvas & context, copying old bitmap & transform
       // if possible.
-      ctx_ = new meta.Context(w, h);
-      if (bitmap) ctx_.drawImage(bitmap, 0, 0);
-      if (t) ctx_.setTransform.apply(ctx_, t);
+      ctx_ = new meta.Context(w, h)
+      if (bitmap) ctx_.drawImage(bitmap, 0, 0)
+      if (t) ctx_.setTransform.apply(ctx_, t)
 
       // Reassert the old z-order in the new canvas style.
-      this.z(this.z());
+      this.z(this.z())
 
       // Insert new canvas into the DOM.
-      parent_.appendChild(ctx_.canvas);
-    };
+      parent_.appendChild(ctx_.canvas)
+    }
 
     /**
      * @method getContext
      * @return [Context]
      */
     this.getContext = function() {
-      return ctx_;
-    };
+      return ctx_
+    }
 
     /**
      * @method put
@@ -483,16 +480,16 @@
      *  thisArg
      */
     this.put = function(e) {
-      if (!e) throw new meta.exception.InvalidParameterException();
+      if (!e) throw new meta.exception.InvalidParameterException()
       if (e.bound) {
-        rtree_.insert(e.bound, e);
+        rtree_.insert(e.bound, e)
       } else if (e.onbound) {
-        rtree_.insert(e.onbound.call(e), e);
+        rtree_.insert(e.onbound.call(e), e)
       } else {
-        entities_.push(e);
+        entities_.push(e)
       }
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method pick
@@ -508,13 +505,13 @@
      * @return Array
      */
     this.pick = function(x, y) {
-      x += mcx.camera()[0];
-      y += mcx.camera()[1];
-      var es = rtree_.search([x, y, 1, 1]).concat(entities_);
+      x += mcx.camera()[0]
+      y += mcx.camera()[1]
+      var es = rtree_.search([x, y, 1, 1]).concat(entities_)
       var filtered = es.filter(
-          (function(e) {return mask(e, x, y);}).bind(void 0));
-      return filtered;
-    };
+          (function(e) {return mask(e, x, y)}).bind(void 0))
+      return filtered
+    }
 
     /**
      * @method parallax
@@ -523,34 +520,34 @@
      */
     this.parallax = function(p) {
       if (meta.undef(p))
-        return parallax_;
-      parallax_ = p;
-      return this;
-    };
+        return parallax_
+      parallax_ = p
+      return this
+    }
 
     /**
      * @method getRootNode
      * @return [HTMLElement]
      */
     this.getRootNode = function() {
-      return parent_;
-    };
+      return parent_
+    }
 
     /**
      * @method getHeight
      * @return [Number]
      */
     this.getHeight = function() {
-      return ctx_.canvas.height;
-    };
+      return ctx_.canvas.height
+    }
 
     /**
      * @method getWidth
      * @return [Number]
      */
     this.getWidth = function() {
-      return ctx_.canvas.width;
-    };
+      return ctx_.canvas.width
+    }
 
     /**
      * @method z
@@ -558,31 +555,31 @@
      */
     this.z = function(z) {
       if (meta.undef(z))
-        return zorder_;
+        return zorder_
 
-      zorder_ = z;
+      zorder_ = z
       ctx_.canvas.setAttribute('style',
-          CANVAS_STYLE + ' z-index: ' + z + ';');
+          CANVAS_STYLE + ' z-index: ' + z + '')
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method index
      * @return [meta::Layer]
      */
     this.index = function() {
-      var es = this.getUnindexedEntities();
+      var es = this.getUnindexedEntities()
       es.forEach(function(e, idx, array) {
-          var b = e.bound;
-          if (!b && e.onbound) b = e.onbound.call(e.model);
-          if (!b) return;
-          rtree_.insert(b, e);
-          delete array[idx];
-          }, this);
-      this.setUnindexedEntities(es.filter(meta.def));
-      return this;
-    };
+          var b = e.bound
+          if (!b && e.onbound) b = e.onbound.call(e.model)
+          if (!b) return
+          rtree_.insert(b, e)
+          delete array[idx]
+          }, this)
+      this.setUnindexedEntities(es.filter(meta.def))
+      return this
+    }
 
     /**
      * @method reindex
@@ -596,26 +593,26 @@
      * @return [meta2d::Context]
      */
     this.reindex = function(x, y, w, h) {
-      var rect = [x, y, w, h];
+      var rect = [x, y, w, h]
 
       if (meta.undef(rect))
         throw new meta.exception.
-          InvalidParameterException('rect', rect);
+          InvalidParameterException('rect', rect)
       rtree_.remove(rect).forEach(function(e) {
-          this.addEntity(e);
-          }, this);
-      this.index();
+          this.addEntity(e)
+          }, this)
+      this.index()
 
-      return this;
-    };
+      return this
+    }
 
     /**
      * @method getUnindexedEntities
      * @return [Array<meta::Entity>]
      */
     this.getUnindexedEntities = function() {
-      return entities_.slice(0); // Return a copy of the array.
-    };
+      return entities_.slice(0) // Return a copy of the array.
+    }
 
     /**
      * @method setUnindexedEntities
@@ -625,18 +622,18 @@
     this.setUnindexedEntities = function(array) {
       if (meta.undef(array))
         throw new meta.exception.
-          InvalidParameterException('array', array);
-      entities_ = array;
-      return this;
-    };
+          InvalidParameterException('array', array)
+      entities_ = array
+      return this
+    }
 
     // Create a canvas and insert it into the DOM.
-    this.resize(options.w, options.h);
+    this.resize(options.w, options.h)
 
-  };
+  }
 
   meta.mixSafely(meta, {
     Layer: Layer,
-  });
+  })
 
-}).call(this);
+}(this.meta2d);

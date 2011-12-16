@@ -1,59 +1,54 @@
-/** meta2d.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/meta2d.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *  Enhancements for Canvas 2d Context.
- * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function () {
-  'use strict';
+!function (meta) {
 
-  // The global context (usually the root window in a web client).
-  var root = this;
+  'use strict'
 
   // Promiscuously mix in properties.
   var mix = function(host, vector) {
-    host = host || {};
-    if (!vector) return host;
-    for (var a in vector) host[a] = vector[a];
-    return host;
-  };
+    host = host || {}
+    if (!vector) return host
+    for (var a in vector) host[a] = vector[a]
+    return host
+  }
 
   // Only mix in novel properties.
   var safe_mix = function(host, vector) {
-    host = host || {};
-    if (!vector) return host;
+    host = host || {}
+    if (!vector) return host
     for (var a in vector)
-      if (! (a in host)) host[a] = vector[a];
-    return host;
-  };
+      if (! (a in host)) host[a] = vector[a]
+    return host
+  }
 
   // Create a new object/namespace or mix-in with what's already present.
   var declare = function(o, init) {
-    return (o && safe_mix(o, init)) || init || {};
-  };
+    return (o && safe_mix(o, init)) || init || {}
+  }
 
-  var meta = root.meta2d = declare(root.meta2d, {
-    VERSION: '0.epsilon'
-  });
+  safe_mix(meta, {
+    VERSION: '0.ε'
+  })
 
   // Some basic utilities.
   var undef = function(o) {return typeof o === 'undefined'},
@@ -61,130 +56,129 @@
       is_function = function(o) {return typeof o === 'function'},
       is_null = function(o) {
         return (typeof o === 'object' && !o)
-        /* || (typeof o ==='null') potential Ecmascript 5.1 */;
       },
       is_number = function(o) {return typeof o === 'number'},
       is_object = function(o) {return typeof o === 'object'},
       is_string = function(o) {return typeof o === 'string'},
-      inherits = function(o, parent) {return o instanceof parent;};
+      inherits = function(o, parent) {return o instanceof parent}
 
   // Some less-basic utilities.
 
   /** Length of an array */
   var len = function(ary) {
-    return ary.length;
-  };
+    return ary.length
+  }
 
   /** Make an honest array out of argument object */
   var args = function(argument_object) {
-    return Array.prototype.slice.call(argument_object, 0);
-  };
+    return Array.prototype.slice.call(argument_object, 0)
+  }
 
   /** Maximum value */
   var max = function() {
-    return args(arguments).reduce(function(a, b) {return (a > b) ? a : b;});
-  };
+    return args(arguments).reduce(function(a, b) {return (a > b) ? a : b})
+  }
 
   /** Minimum value */
   var min = function() {
-    return args(arguments).reduce(function(a, b) {return (a > b) ? b : a;});
-  };
+    return args(arguments).reduce(function(a, b) {return (a > b) ? b : a})
+  }
 
   /** Concatenate two arrays */
   var concat = function(a1, a2) {
-    return a1.concat(a2);
-  };
+    return a1.concat(a2)
+  }
 
   /** Get index in array or null (undefined may be undesirable) */
   var index = function(i, array) {
-    if (i >= array.length || i < 0) return null;
-    return array[i];
-  };
+    if (i >= array.length || i < 0) return null
+    return array[i]
+  }
 
   /** Line up 2 arrays and perform a function on elements pairwise */
   var zip = function(f, a1, a2) {
-    var ret = new Array(Math.max(a1.length, a2.length));
+    var ret = new Array(Math.max(a1.length, a2.length))
 
     for (var i = 0; i < ret.length; i++) {
-      ret[i] = f.call(void 0, index(i, a1), index(i, a2));
+      ret[i] = f.call(void 0, index(i, a1), index(i, a2))
     }
 
-    return ret;
-  };
+    return ret
+  }
 
   /** Sort an array of entities by their 'z' attribute' */
   var zsort = function(array) {
     return array.sort(function(a, b) {
-        return  (a.z || -Infinity) - (b.z || -Infinity);
-        });
-  };
+      return  (a.z || -Infinity) - (b.z || -Infinity)
+    })
+  }
 
   /** Get the runtime in milliseconds */
-  var time = (function() {
-    var start = new Date().getTime();
+  var time = function() {
+    var start = (new Date()).getTime()
     return function() {
-      return new Date().getTime() - start;
-    };
-  })();
+      return new Date().getTime() - start
+    }
+  }()
 
   /** Get a random number in the interval [0, 1) */
   var rand = function() {
-    return Math.random();
-  };
+    return Math.random()
+  }
 
   /** Get a random integer in the specified interval (inclusive) */
   var randInt = function(low, high) {
-    return Math.floor(low + (high - low + 1) * rand());
-  };
+    return Math.floor(low + (high - low + 1) * rand())
+  }
 
   /** Round down a float to an integer */
   var floor = function(val) {
-    return val << 0;
-  };
+    return val << 0
+  }
 
   /** Round a float to an integer */
   var round = function(val) {
-    return (0.5 + val) << 0;
-  };
+    return (0.5 + val) << 0
+  }
 
   /** Convert an array into a string */
   var serialize = function(array) {
-    return array.join(',');
-  };
+    return array.join(',')
+  }
 
   /** Cycle through any number of callbacks */
   var toggle = function() {
     var fs = args(arguments),
-        current = 0;
+        current = 0
     var f = function() {
-      current %= fs.length;
-      return fs[current++].call(this);
-    };
-    return f;
-  };
+      current %= fs.length
+      return fs[current++].call(this)
+    }
+    return f
+  }
 
   /** Format a color string */
 
   var hsla = function(h, s, l, a) {
-    return 'hsla(' + h + ',' + s + '%,' + l + '%,' + a + ')';
-  };
+    return 'hsla(' + h + ',' + s + '%,' + l + '%,' + a + ')'
+  }
 
   var hsl = function(h, s, l) {
-    return hsla(h, s, l, 1);
-  };
+    return hsla(h, s, l, 1)
+  }
 
   var rgba = function(r, g, b, a) {
-    return 'rgba' + r + ',' + g + ',' + b + ',' + a + ')';
-  };
+    return 'rgba' + r + ',' + g + ',' + b + ',' + a + ')'
+  }
 
   var rgb = function(r, g, b) {
-    return rgba(r, g, b, 1);
-  };
+    return rgba(r, g, b, 1)
+  }
 
   // Modifiable Types
   var MaskType = function() {},
       ProjectionType = function() {},
-      TweenType = function() {};
+      TweenType = function() {}
 
   safe_mix(meta, {
     def: def,
@@ -220,25 +214,25 @@
     MaskType: MaskType,
     ProjectionType: ProjectionType,
     TweenType: TweenType
-  });
+  })
 
   // Create a new kind of exception.
   var makeX = function(name) {
     var x = function() {
-      this.message = args(arguments).join(':');
-      this.name = name;
-    };
+      this.message = args(arguments).join(':')
+      this.name = name
+    }
     x.prototype.toString = function() {
-      return this.name + ' - ' + this.message;
-    };
-    return x;
-  };
+      return this.name + ' - ' + this.message
+    }
+    return x
+  }
 
   // Exceptions used in this library.
   meta.exception = meta.declareSafely(meta.exception, {
     InvalidParameterException: makeX('InvalidParameterException'),
     InvokedAbstractMethodException: makeX('InvokedAbstractMethodException'),
     InvalidTemplateException: makeX('InvalidTemplateException')
-  });
+  })
 
-}).call(this);
+}(this.meta2d = {});

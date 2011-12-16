@@ -1,67 +1,64 @@
-/** rtree.js
- *  Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+/* -----------------------------------------------------------------------------
+ * <https://gitorious.org/meta2d/core/trees/master/>
+ * src/rtree.js
+ * -----------------------------------------------------------------------------
+ * Copyright 2011 Michael Morris-Pearce
  * 
- *      This file is part of Meta2D.
+ * This file is part of Meta2D.
  *
- *      Meta2D is free software: you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation, either version 3 of the License, or
- *      (at your option) any later version.
+ * Meta2D is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *      Meta2D is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
+ * Meta2D is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      You should have received a copy of the GNU General Public License
- *      along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
- *
- *  Meta2D is hosted at <https://gitorious.org/meta2d/>. Please check there for
- *  up-to-date code, examples, documentation, and other information.
+ * You should have received a copy of the GNU General Public License
+ * along with Meta2D.  If not, see <http://www.gnu.org/licenses/>.
  *----------------------------------------------------------------------------*/
-/** jslint vars: true, white: true, indent: 2, maxlen: 80, imperfection: true */
 
-(function() {
-  'use strict';
-  var root = this;
-  var meta = root.meta2d;
-  if (!meta) throw 'Could not find main namespace.';
+!function(meta) {
 
-  var rect = meta.math.rect;
+  'use strict'
+
+  var rect = meta.math.rect
 
   var expand = function(rect1, rect2) {
     var l1 = rect1[0], l2 = rect2[0],
         t1 = rect1[1], t2 = rect2[1],
         r1 = rect1[0] + rect1[2], r2 = rect2[0] + rect2[2],
-        b1 = rect1[1] + rect1[3], b2 = rect2[1] + rect2[3];
+        b1 = rect1[1] + rect1[3], b2 = rect2[1] + rect2[3]
     var top = Math.min(t1, t2),
         bottom = Math.max(b1, b2),
         right = Math.max(r1, r2),
-        left = Math.min(l1, l2);
+        left = Math.min(l1, l2)
     return [
       left,
       top,
       right - left,
       bottom - top
-    ];
-  };
+    ]
+  }
 
   var least_expansion = function(children, rect) {
     var expanded = children.map(function(node) {
         return {
           newrect: expand(node.rect, rect),
           noderef: node
-        };
-        });
+        }
+        })
     var bestnode = expanded.sort(function(n1 ,n2) {
         return meta.math.rect.area(n1.newrect) -
-               meta.math.rect.area(n2.newrect);
-        })[0];
+               meta.math.rect.area(n2.newrect)
+        })[0]
     return {
       child: bestnode.noderef,
       rect: bestnode.newrect
-    };
-  };
+    }
+  }
 
   /**
    * @class RTree
@@ -77,10 +74,10 @@
    *  </p>
    */
   var RTree = function (capacity) {
-    this.children; // [{rtree, rect}], not kept by leaf nodes
-    this.data; // [{object, rect}], only kept by leaf nodes
-    this.capacity = capacity || 3;
-  };
+    this.children // [{rtree, rect}], not kept by leaf nodes
+    this.data // [{object, rect}], only kept by leaf nodes
+    this.capacity = capacity || 3
+  }
 
   /**
    * @method query
@@ -104,28 +101,32 @@
    */
   RTree.prototype.query = function(f, remove) {
     var hits = [],
-        merged = [];
+        merged = []
 
     if (this.data) {
       this.data.forEach(function(d, idx, array) {
-          if (!f.call(void 0, d.rect)) return;
-          hits.push(d.object);
-          if (remove) array[idx] = void 0;
-          });
-      if (remove) this.data = this.data.filter(meta.def);
-      return hits;
+          if (!f.call(void 0, d.rect)) {
+            return null
+          }
+          hits.push(d.object)
+          if (remove) array[idx] = void 0
+          })
+      if (remove) this.data = this.data.filter(meta.def)
+      return hits
     }
 
     if (!this.children)
-      return [];
+      return []
 
     this.children.forEach(function(c) {
-        if (!f.call(void 0, c.rect)) return;
-        merged = merged.concat(c.rtree.query(f, remove));
-        });
+        if (!f.call(void 0, c.rect)) {
+          return null
+        }
+        merged = merged.concat(c.rtree.query(f, remove))
+        })
 
-    return merged;
-  };
+    return merged
+  }
 
   /**
    * @method search
@@ -144,10 +145,10 @@
    */
   RTree.prototype.search = function(rect, remove) {
     var f = function(r) {
-      return meta.math.rect.intersect(r, rect);
-    };
-    return this.query(f, remove);
-  };
+      return meta.math.rect.intersect(r, rect)
+    }
+    return this.query(f, remove)
+  }
 
   /**
    * @method find
@@ -166,10 +167,10 @@
    */
   RTree.prototype.find = function(rect, remove) {
     var f = function(r) {
-      return meta.math.rect.equal(r, rect);
-    };
-    return this.query(f, remove);
-  };
+      return meta.math.rect.equal(r, rect)
+    }
+    return this.query(f, remove)
+  }
 
   /**
    * @method searchInside
@@ -188,10 +189,10 @@
    */
   RTree.prototype.searchInside = function(rect, remove) {
     var f = function(r) {
-      return meta.math.rect.containedBy(r, rect);
-    };
-    return this.query(f, remove);
-  };
+      return meta.math.rect.containedBy(r, rect)
+    }
+    return this.query(f, remove)
+  }
 
   /**
    * @method searchOutside
@@ -210,10 +211,10 @@
    */
   RTree.prototype.searchOutside = function(rect, remove) {
     var f = function(r) {
-      return !meta.math.rect.intersect(r, rect);
-    };
-    return this.query(f, remove);
-  };
+      return !meta.math.rect.intersect(r, rect)
+    }
+    return this.query(f, remove)
+  }
 
   /**
    * @method insert
@@ -241,17 +242,17 @@
   RTree.prototype.insert = function(rect, object) {
     // Defer to child that needs least expansion of its bounds.
     if (this.children) {
-      var best = least_expansion(this.children, rect);
-      best.child.rect = best.rect;
-      return best.child.rtree.insert(rect, object);
+      var best = least_expansion(this.children, rect)
+      best.child.rect = best.rect
+      return best.child.rtree.insert(rect, object)
     }
 
     // Add new data.
-    this.data = this.data || [];
+    this.data = this.data || []
     this.data.push({
         rect: rect,
         object: object
-        });
+        })
 
     // Expand if capacity reached, and distribute data among children.
     if (this.data.length >= this.capacity) {
@@ -260,25 +261,20 @@
             var child = {
               rtree: new meta.RTree(rtree.capacity),
               rect: rtree.data[i].rect
-            };
+            }
 
-            child.rtree.insert(rtree.data[i].rect, rtree.data[i].object);
-            rtree.children = rtree.children || [];
-            rtree.children.push(child);
-          };
+            child.rtree.insert(rtree.data[i].rect, rtree.data[i].object)
+            rtree.children = rtree.children || []
+            rtree.children.push(child)
+          }
 
       this.data.forEach(function(d, i) {
-          move_datum(i);
-          });
-      this.data = undefined;
-
-      return;
+          move_datum(i)
+          })
+      this.data = undefined
     }
+  }
 
-    // Tree was unchanged.
-    return;
-  };
+  meta.mixSafely(meta, {RTree: RTree})
 
-  meta.mixSafely(meta, {RTree: RTree});
-
-}).call(this);
+}(this.meta2d);

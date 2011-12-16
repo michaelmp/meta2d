@@ -2,14 +2,13 @@
 #
 # Instructions:
 #
-#   (1) Install rake build system.
+#   (1) Install rake build utility.
 #
-#   (2) Run 'rake' to generate the following:
-#       ++ /meta2d.js
-#       ++ /docs/api/index.html
+#   (2) Run 'rake' to generate the following files:
+#       ++ meta2d.js
+#       ++ docs/api/index.html
 #
-#   (3) Run 'rake clean':
-#       -- Removes generated files.
+#   (3) Run 'rake clean' to remove all generated files.
 
 directory "docs/api"
 
@@ -29,7 +28,6 @@ sourcefiles = [
   "src/layer.js",
   "src/lru.js",
   "src/metacontext.js",
-  "src/process.js",
   "src/projection.js",
   "src/rcache.js",
   "src/rtree.js",
@@ -68,4 +66,5 @@ end
 
 desc "Generate Javascript library, build documentation."
 task :default => [:merge, :document] do
+  puts "All done."
 end
