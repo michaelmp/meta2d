@@ -29,10 +29,6 @@
    *  <p>
    *  A least-recently-used cache implementation.
    *  </p>
-   *  
-   *  <p>
-   *  All operations are &theta;(1) runtime unless otherwise specified.
-   *  </p>
    */
 
   /**

@@ -36,6 +36,52 @@
 
   /**
    * @class Layer
+   *  <p>
+   *  A Layer represents one slice of a composed drawing area. Layers are
+   *  visually sorted by their <i>z</i> property, with higher-valued layers
+   *  overlapping lower-valued layers.
+   *  </p>
+   *
+   *  <p>
+   *  Layers store visual entities and are responsible for controlling the
+   *  entity scene graph.
+   *  </p>
+   *
+   *  <p>
+   *  Every layer contains one on-screen canvas element to which it draws
+   *  graphics. This canvas can be drawn to directly with the <b>getContext()
+   *  </b> method, or indirectly with <b>draw()</b> and <b>flip()</b>.
+   *  </p>
+   *
+   *  <p>
+   *  Layers provide controlled access to the on-screen canvas through a
+   *  backbuffer. Using the backbuffer requires additional copying of graphic
+   *  data, but allows for sane sharing of a single canvas.
+   *  </p>
+   *
+   *  <p>
+   *  Entities that define a <i>draw</i> property are included in the scene
+   *  graph rendering. The rendering process includes any children entities of a
+   *  drawn entity.
+   *  </p>
+   *
+   *  <code>
+   *  mcx.put('', {
+   *    ondraw: function(cx) {
+   *      cx.fillRect(0, 0, 100, 100)
+   *    }
+   *  })
+   *  
+   *  mcx.repaint()
+   *  <hr>
+   *  var drawing = ...
+   *  
+   *  mcx.put('', {
+   *    draw: drawing
+   *  })
+   *  
+   *  mcx.repaint()
+   *  </code>
    */
 
   /**

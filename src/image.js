@@ -28,27 +28,17 @@
    * @class Image
    *
    * <p>
-   * Load an HTML image of any MIME type the UA can handle & extract the pixels
-   * as RGBA data. The image automatically loads upon construction.
+   * A wrapper class for HTMLImageElement. Loads an image and copies the bitmap
+   * into a new canvas.
    * </p>
    *
    * <p>
-   * Note that the image must be served from an approved origin. For more
-   * information, read:
-   * </p>
-   * 
-   * <p>
-   * [1]
-   * <a href="http://www.w3.org/TR/html5/the-canvas-element.html#security-with-
-   * canvas-elements">
-   * http://www.w3.org/TR/html5/the-canvas-element.html#security-with-canvas-elements
-   * </a>
-   * </p>
-   *
-   * <p>
-   * [2]
-   * <a href="http://www.w3.org/TR/cors/">
-   * http://www.w3.org/TR/cors/ </a>
+   * An Image has the following properties:
+   * <ol>
+   *   <li> <i>src</i> - The image source.
+   *   <li> <i>htmlImage</i> - The original HTMLImageElement loaded.
+   *   <li> <i>ctx</i> - A rendering context on the image data.
+   * </ol>
    * </p>
    */
 
@@ -56,134 +46,75 @@
    * @constructor
    *
    * @param src
-   *  A string sufficiently identifying the location of the image. All
-   *  protocols & formats supported by the UA for an HTMLImage are allowed.
    *
    * @param wait
-   *  Optional. If true, do not begin downloading the image until load() is
-   *  called.
+   *  <i>Optional</i>. If true, will defer image loading to <b>load()</b>.
    *
    * @param onload
-   *  Optional. A callback for when the image has been successfully loaded and
-   *  the pixel data have been read.
+   *  <i>Optional</i> callback.
    *
    * @param onerror
-   *  Optional. A callback for when something goes wrong loading the image.
+   *  <i>Optional</i> callback.
    */
   var Image = function(src, wait, onload, onerror) {
     if (!src) throw new meta.exception.InvalidParameterException()
-    var img_ = this,
-        src_ = src,
-        pixels_ = [],
-        w_,
-        h_,
-        dummy_ = document.createElement('img'),
-        canvas_,
-        context_
+
+    this.src = src
+    this.htmlImage = document.createElement('img')
 
     // Set the error callback.
-    dummy_.onerror = onerror
+    this.htmlImage.onerror = onerror
 
-    // Set the callback for when the image is finished downloading.
-    dummy_.onload = function() {
-      var idata, i
-      canvas_ = document.createElement('canvas')
+    // Set callback for when the image is loaded.
+    this.htmlImage.onload = (function() {
+      // Store the image in a canvas.
+      var canvas = document.createElement('canvas')
+      canvas.width = this.htmlImage.width
+      canvas.height = this.htmlImage.height
+      this.ctx = new meta.Context(canvas)
+      this.ctx.drawImage(this.htmlImage, 0, 0)
 
-      // Set some properties now that the image has been fetched.
-      canvas_.width = w_ = dummy_.width
-      canvas_.height = h_ = dummy_.height
-      context_ = canvas_.getContext('2d')
+      // Inform the onload callback.
+      if (meta.def(onload)) onload.call(this)
+    }).bind(this)
 
-      // Copy the image into our canvas.
-      context_.drawImage(dummy_, 0, 0)
-
-      // Access the pixel data via the context.
-      idata = context_.getImageData(0, 0, w_, h_)
-
-      i = idata.data.length
-      while (i--) pixels_[i] = idata.data[i]
-
-      if (meta.def(onload)) onload.call(img_)
-    }
-
-    /**
-     * @method load
-     *  Starts the image download & processes pixel data once it's received.
-     *
-     * @return Image
-     */
-    this.load = function() {
-      dummy_.src = src_
-      return this
-    }
-
-    /**
-     * @method getHTMLImage
-     *  Returns an object suitable for Context2D's drawImage method.
-     *
-     * @return HTMLImageElement
-     */
-    this.getHTMLImage = function() {
-      return dummy_
-    }
-
-    /**
-     * @method getCanvas
-     *  Returns a canvas with the same size as the image and its bitmap
-     *  equivalent to the image.
-     *
-     * @return HTMLCanvasElement
-     */
-    this.getCanvas = function() {
-      return canvas_
-    }
-    
-    /**
-     * @method getWidth
-     *  Returns the width of the image in pixels.
-     *
-     * @return Number
-     */
-    this.getWidth = function() {
-      return w_
-    }
-
-    /**
-     * @method getHeight
-     *  Returns the height of the image in pixels.
-     *
-     * @return Number
-     */
-    this.getHeight = function() {
-      return h_
-    }
-
-    /**
-     * @method getPixel
-     *  Returns an array of RGBA integer values in [0, 255],
-     *  or null if (x, y) is outside the image bounds.
-     *
-     * @param x
-     *  The column index.
-     * @param y
-     *  The row index.
-     *
-     * @return Array<<Number>>[4]
-     */
-    this.getPixel = function(x, y) {
-      var idx = 4 * ((y * w_) + x)
-      if (idx < 0 || idx >= pixels_.length) return null
-      return [
-        pixels_[idx],
-        pixels_[idx+1],
-        pixels_[idx+2],
-        pixels_[idx+3]
-      ]
-    }
 
     // Start the download unless instructed otherwise.
     !wait && this.load()
+  }
 
+  /**
+   * @method load
+   *  Starts the image download.
+   *
+   * @return Image
+   */
+  Image.prototype.load = function() {
+    this.htmlImage.src = this.src
+      return this
+  }
+
+  /**
+   * @method getPixel
+   *  Returns an array of RGBA values in [0, 255],
+   *  or null if (x, y) is outside the image bounds.
+   *
+   *  <p>
+   *  Note that for 
+   *  <a href="http://www.w3.org/TR/html5/the-canvas-element.html#security-with-
+   *canvas-elements">security reasons</a>, the image source must be an
+   *  approved origin.
+   * </p>
+   *
+   * @param x
+   *  The column index.
+   * @param y
+   *  The row index.
+   *
+   * @return Array<<Number>>[4]
+   */
+  Image.prototype.getPixel = function(x, y) {
+    return this.ctx.getImageData(x, y, 1, 1).data
   }
 
   meta.mixSafely(meta, {

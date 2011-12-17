@@ -7,6 +7,7 @@
 #   (2) Run 'rake' to generate the following files:
 #       ++ meta2d.js
 #       ++ docs/api/index.html
+#       ++ docs/api/all.html
 #
 #   (3) Run 'rake clean' to remove all generated files.
 
@@ -51,7 +52,7 @@ end
 desc "Build the documentation."
 task :document => [:merge, 'docs/api'] do
   puts "Parsing comments to build HTML documentation..."
-  sh "cat 'meta2d.js' | ./doc.py > docs/api/index.html"
+  sh "cat 'meta2d.js' | ./doc.py"
   puts "Done documenting."
   puts ""
 end

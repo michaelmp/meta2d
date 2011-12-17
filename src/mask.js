@@ -26,9 +26,35 @@
 
   /**
    * @class Mask
+   *  <p>
+   *  Masks are used to determine entity visual intersection with a test point.
+   *  The common example is an alpha mask against the mouse cursor to determine
+   *  whether or not the mouse is hovering over the entity.
+   *  </p>
    *
+   *  <p>
+   *  This expression evaluates to true if-and-only-if <i>drawing</i> is
+   *  visible at the screen coordinate (<i>x</i>,<i>y</i>).
+   *  <code>
+   *  meta2d.mask.opaque(drawing).overlaps(x, y)
+   *  </code>
+   *  The <i>mask</i> property of entities accepts a Mask.
+   *  <code>
+   *  mcx.put('', {
+   *    onmask: function() {
+   *      return this.mask = meta2d.mask.opaque(this.draw)
+   *    },
+   *    onclick: function() {
+   *      alert('I am opaque here!')
+   *    }
+   *  })
+   *  </code>
+   *  Note that the <i>mask</i> property of entities is prerequisite to
+   *  receiving mouse events.
+   *  </p>
    * @extends Modifiable<<MaskType>>
    */
+
   var Mask = function() {
     meta.Modifiable.call(this, new meta.MaskType())
   }
@@ -36,7 +62,9 @@
   /**
    * @method overlaps
    *  <p>
-   *  <i>Abstract</i>.
+   *  <i>Abstract</i>. Returns true if-and-only-if the screen coordinate
+   *  (<i>x</i>,<i>y</i>) is understood to collide with the object
+   *  represented by the mask.
    *  </p>
    * @param x
    * @param y

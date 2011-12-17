@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded',
     reset();
     [ctx1, ctx2].forEach(function(ctx) {
         ctx.setTransform(-1, 0, 0, -1, 50, 50);
-        ctx.drawImage(image.getHTMLImage(), -50, -50, 100, 100);
+        ctx.drawImage(image.htmlImage, -50, -50, 100, 100);
         });
     assert('drawing#5', sameBitmap(ctx1, ctx2));
 

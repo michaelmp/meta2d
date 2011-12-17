@@ -1,125 +1,57 @@
 body {
-  margin: 0;
-  font-family: sans;
-  font-size: 80%;
-  color: #444444;
+  padding: 5em 4em 0 4em;
+  max-width: 45em;
+  color: #222;
+  font-family: Georgia, FreeSerif, Times, serif;
 }
-
-.toc {
-  width: 15em;
-  position: fixed;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background-color: #54608f;
-  border: solid #202d63;
-  border-width: 1em 0 2em 0;
-  color: white;
-  font-family: sans;
-  display: inline;
+@media screen and (min-width: 50em) {
+  body {
+  }
 }
-
-.api {
-  margin-left: 15em;
-  border: solid #202d63;
-  border-width: 1em 0 2em 0;
+@media screen and (max-width: 50em) {
+  body {
+  }
 }
-
-article {
-  width: 100%;
+h1, h2, h3, h4 {
+  color: black;
 }
-
-h1.content {
-  font-weight: bold;
-  font-size: 1em;
-  margin: 1em;
+h1 {
+  font-size: 250%;
 }
-
-h1.object {
-  padding: 1em;
-  margin: 0;
-  background-color: #d3d8ec;
-  color: #202d63;
-  border: 1px solid #999999;
-  border-width: 0px 0px 1px 0px;
-  font-size: 1.5em;
+h2 {
+  font-size: 200%;
 }
-
-.inheritance {
-  font-size: 0.8em;
-  margin: 0.5em 0 0 1em;
-  color: #838eac;
+h3 {
+  font-size: 120%;
 }
-
-h2.content {
-  font-weight: bold;
-  font-size: 1em;
-  margin: 1em 0 0 1.5em;
+h4 {
+  font-size: 100%;
 }
-
-a.content {
-  margin-left: 2em;
-  display: block;
-  color: #b3beec;
-  text-decoration: none;
-}
-
-a.content:hover {
-  color: #f7e3b4;
-  text-decoration: underline;
-}
-
-h2.method {
-  font-size: 1.25em;
-  color: #202d63;
-}
-
-p {
-  margin: 1em 2em 1em 2em;
-  font-size: 1em;
-}
-
-section {
-  padding: 0.5em 1em 0.5em 2em;
-}
-
-div.method_desc {
-  padding: 1em 0em 0.5em 0em;
-}
-
-div.param {
-  padding: 0.5em 0em 0.5em 1em; 
-}
-
-div.param_type {
-  display: inline;
-}
-
-div.param_desc {
-  margin-left: 1em;
-  display: inline;
-}
-
-div.return {
-  margin-left: 1em;
-}
-
-div.return_type {
-  display: inline;
-}
-
-div.return_desc {
-  display: inline;
-}
-
 code {
+  background-color: #f8f8f8;
   display: block;
-  background-color: #f7efda;
-  color: #666666;
-  border-radius: 5px;
-  margin: 1em;
-  padding: 0.5em 0.5em 2em 1em;
-  font-family: monospace;
-  font-size: 1.25em;
+  padding: 1em;
+  border: #ddd solid;
+  border-width: 1px 1px 1px 0.5em;
+  margin: 1em 0 1em 0;
   white-space: pre;
+}
+hr {
+  border: 1px solid #ddd;
+  border-width: 1px 0 0 0;
+  margin: 2em 0 2em 0;
+}
+.object {
+  margin-top: 1em;
+  padding-top: 1em;
+}
+.inheritance {
+  font-size: 0.5em;
+  margin-left: 2em;
+}
+a {
+  color: #0000ff;
+}
+a:visited {
+  color: #cc33cc;
 }

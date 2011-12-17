@@ -24,6 +24,58 @@
 
   'use strict'
 
+  /**
+   * @class Drawing
+   *  <p>
+   *  A Drawing is a bitmap paired with a transformation, together describing
+   *  what and where the bitmap should appear on the screen. A Drawing has two
+   *  key properties:
+   *  <ol>
+   *    <li><i>ctx</i> - A rendering context.
+   *    <li><i>transform</i> - The context transformation at time of creation.
+   *  </ol>
+   *  </p>
+   *  <p>
+   *  Drawings are useful when the transformation state of a Context must be
+   *  remembered independent of the <i>save</i>/<i>restore</i> stack.
+   *  </p>
+   *  <p>
+   *  The <i>draw</i> property of entities expects a Drawing. Layers use this
+   *  property to remember what the entity looks like &amp; where it should
+   *  be redrawn, long after the transformation state on the context has
+   *  changed.
+   *  </p>
+   *  <p>
+   *  In the example below, Layer.makeDrawing creates a new Drawing with its
+   *  transformation set to the layer context's current transformation. When
+   *  the layer redraws the entity it will reuse the value stored in <i>draw
+   *  </i>, avoiding the need for <i>ondraw</i> to redraw the path.
+   *  </p>
+   *  <code>
+   *  mcx.put('', {
+   *    ondraw: function(cx, layer) {
+   *      var ctx = new meta2d.Context(w, h)
+   *  
+   *      ctx.beginPath()
+   *      ...
+   *  
+   *      return this.draw = layer.makeDrawing(ctx)
+   *    }
+   *  })
+   *  </code>
+   */
+
+  /**
+   * @constructor
+   *  Creates a new Context with the specified width and height, or takes an
+   *  existing Context, and saves its current transformation state.
+   * @param w
+   *  The width of the bitmap.
+   * @param h
+   *  The height of the bitmap.
+   * @param context
+   *  <i>Optional</i>. You may create a Drawing from an existing Context.
+   */
   var Drawing = function(){
     if (arguments[0] && arguments[1]) {
       this.ctx = new meta.Context(arguments[0], arguments[1])
@@ -32,9 +84,15 @@
     } else {
       throw new meta.exception.InvalidParameterException()
     }
-    this.transform = meta.math.affine.identity()
+    this.transform = this.ctx.getTransform()
   }
 
+  /**
+   * @method getBounds
+   *  Returns the rect [x, y, w, h] describing the screen coordinates that
+   *  entirely contain the drawing after applying its transform.
+   * @return Array<<Number>>[4]
+   */
   Drawing.prototype.getBounds = function() {
     var t,
         x1, x2, x3, x4,

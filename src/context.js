@@ -24,28 +24,22 @@
 
   'use strict'
 
-  var CANVAS_STYLE = 'position: absolute left:0px top:0px'
+  var CANVAS_STYLE = 'position: absolute; left: 0px; top: 0px;'
 
   /**
    * @class Context
    *
    *  <p>
-   *  A Context implements CanvasRenderingContext2D[1] as outlined in HTML5. It
-   *  additionally provides a getTransform method.
+   *  A Context implements the <a href="
+   *http://dev.w3.org/html5/2dcontext/Overview.html#canvasrenderingcontext2d"
+   *>2d context API</a> described in HTML5. It additionally provides a
+   *  <b>getTransform()</b> method.
    *  </p>
    *
    *  <p>
    *  Constructing a Context creates a new HTMLCanvasElement with the specified
-   *  width and height and establishes the constructed object as a rendering
-   *  context on that canvas.
-   *  </p>
-   *
-   *  <p>
-   *  [1]
-   *  <a href="
-   *  http://dev.w3.org/html5/2dcontext/Overview.html#canvasrenderingcontext2d"
-   *  >http://dev.w3.org/html5/2dcontext/Overview.html#canvasrenderingcontext2d
-   *  </a>
+   *  width and height and returns a rendering context for that canvas. You may
+   *  also construct a Context from an existing canvas.
    *  </p>
    *  
    * @extends CanvasRenderingContext2D
@@ -54,12 +48,10 @@
   /**
    * @constructor
    *  <code>
-   *  var ctx = new Context(200, 100)
-   *  ctx.scale(10, 10)
-   *  ctx.translate(10, 5)
-   *  ctx.fillRect(-10, -5, 20, 10)
-   *
-   *  ctx.getTransform()  // [10, 0, 0, 10, 100, 50]
+   *  var ctx = new meta2d.Context(200, 100)
+   *  <hr>
+   *  var canvas = document.createElement('canvas')
+   *    , ctx = new meta2d.Context(canvas)
    *  </code>
    *
    * @param w

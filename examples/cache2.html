@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
       var p;
 
       if (this.model.loaded) {
-        p = new meta2d.Context(photo[this.model.id].getCanvas());
+        p = new meta2d.Context(photo[this.model.id].ctx.canvas);
 
         // Draw a border around the photo. 
         p.lineWidth = 20;

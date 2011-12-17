@@ -32,72 +32,109 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import re
 
 ############ Begin HTML generator ############
 
-DOC_HTML = {
-    'object': '<article id="%(label)"> <h1 class="object"> %(label) %(inheritance) </h1> <p> %(description) </p> <p> %(contained) </p> </article>',
-    'inheritance': '<div class="inheritance"> &sup; %(label) </div>',
-    'constructor': '<section> <h2 class="method"> Constructor </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
-    'method': '<section> <h2 class="method"> %(label) </h2> %(contained) <div class="method_desc"> %(description) </div> </section>',
-    'param': '<div class="param"> <div class="param_type"> &larr; %(label) </div> <div class="param_desc"> %(description) </div> </div>',
-    'return': '<div class="return"> div class="return_type"> &rarr; %(label) </div> <div class="return_desc"> %(description) </div> </div>',
-    'everything': """
-<html>
-<head>
-<link rel="stylesheet" href="style.css" type="text/css" />
-</head>
-<body>
-<div class="toc"> %(toc) </div>
-<div class="api"> %(contained) </div>
-</body>
-</html>
+DOC_HTML_TARGETS = {
+    'docs/api/index.html': """
+%(header)
+%(index)
+%(footer)
+"""
+  , 'docs/api/all.html': """
+%(header)
+%(index-all)
+%(everything)
+%(footer)
 """
 }
 
-DOC_HTML_TAGS = {
+DOC_HTML_FRAGMENT = {
+    'header': open('docs/template/header.html', 'r').read()
+  , 'footer': open('docs/template/footer.html', 'r').read()
+  , 'index' : open('docs/template/index.html', 'r').read()
+  , 'index-all': open('docs/template/index-all.html', 'r').read()
+}
+
+DOC_HTML = {
+    'everything': """
+<div> %(contained) </div>
+"""
+  , 'object': '<article id="%(label)"> <h2 class="object"> %(label) %(inheritance) </h2> <p> %(description) </p> <p> %(contained) </p> </article>'
+  , 'inheritance': '<div class="inheritance"> &sup; %(label) </div>'
+  , 'constructor': '<section> <h3 class="method"> Constructor </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
+  , 'method': '<section> <h3 class="method"> %(label) </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
+  , 'param': '<div> <span> &larr; %(label) </span> <span> %(description) </span> </div>'
+  , 'return': '<div class="return"> div class="return_type"> &rarr; %(label) </div> <div class="return_desc"> %(description) </div> </div>'
+}
+
+DOC_HTML_FILTER = {
     '-->': '&rarr;',
     '<--': '&larr;',
     '<<': '&lt;',
     '>>': '&gt;',
+    '<code>': '<code class="prettyprint">'
 }
 
-def build_html_toc():
-  html = '<h1 class="content"> Table of Contents </h1>'
+class HTMLVisitor:
+  def s_visit(self, s):
+    # Parse fragments
+    for frag in DOC_HTML_FRAGMENT:
+      s = s.replace('%('+frag+')', DOC_HTML_FRAGMENT[frag])
 
-  html += '<h2 class="content"> Classes </h2>'
+    # Parse special items
+    s = s.replace('%(classes)', build_html_classes())
+    s = s.replace('%(mixins)', build_html_mixins())
+    s = s.replace('%(everything)', self.o_visit(Everything()))
+
+    # Finally, filter/sanitize
+    for t in DOC_HTML_FILTER:
+      s = s.replace(t, DOC_HTML_FILTER[t])
+
+    return s
+
+  def o_visit(self, o):
+    if o.getType() not in DOC_HTML:
+      return ''
+
+    # Walk through the object tree
+    l = o.getLabel()
+    d = o.getDescription()
+    c = ' '.join([self.o_visit(c) for c in o.getContained()])
+    i = ' '.join([self.o_visit(i) for i in o.getInheritance()]) \
+        if o.getType() == 'object' else ''
+
+    s = DOC_HTML[o.getType()]
+    s = s.replace('%(label)', l)
+    s = s.replace('%(description)', d)
+    s = s.replace('%(contained)', c)
+    s = s.replace('%(inheritance)', i)
+        
+    return s
+
+def output_html_targets():
+  for target in DOC_HTML_TARGETS.keys():
+    f = open(target, 'w')
+    template = DOC_HTML_TARGETS[target]
+    f.write(HTMLVisitor().s_visit(template))
+    f.close()
+
+def build_html_classes():
+  html = ''
   for c in sorted(namespace['class'].values(),
         lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
     l = c.getLabel().split(':')[0]
-    html += '<a href="#' + l + '" class="content">' + l + '</a>'
+    html += '<li><a href="#' + l + '">' + l + '</a></li>'
+  return html
 
-  html += '<h2 class="content"> Mixins </h2>'
+def build_html_mixins():
+  html = ''
   for m in sorted(namespace['mixin'].values(),
         lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
     l = m.getLabel().split(':')[0]
-    html += '<a href="#' + l + '" class="content">' + l + '</a>'
-
+    html += '<li><a href="#' + l + '" class="content">' + l + '</a></li>'
   return html
-
-class HTMLVisitor:
-  def visit(self, o):
-    if o.getType() not in DOC_HTML:
-      return ''
-    l = o.getLabel()
-    d = o.getDescription()
-    c = ' '.join([self.visit(c) for c in o.getContained()])
-    i = ' '.join([self.visit(i) for i in o.getInheritance()]) \
-        if o.getType() == 'object' else ''
-    sanitized = DOC_HTML[o.getType()] \
-      .replace('%(toc)', build_html_toc()) \
-      .replace('%(label)', l) \
-      .replace('%(description)', d) \
-      .replace('%(contained)', c) \
-      .replace('%(inheritance)', i)
-        
-    for t in DOC_HTML_TAGS:
-      sanitized = sanitized.replace(t, DOC_HTML_TAGS[t])
-    return sanitized
 
 ############ End HTML generator ############
 
@@ -185,9 +222,9 @@ class Method(Visited):
   def getLabel(self):
     output = self.label + '(' + ', '.join( \
         [p.getLabel() for p in self.params]) + ')'
-    if self.ret:
-      output += ' --> ' + \
-          self.ret.getLabel() if self.ret.getLabel() else 'void'
+    #if self.ret:
+    #  output += ' --> ' + \
+    #      self.ret.getLabel() if self.ret.getLabel() else 'void'
     return output
 
   def getContained(self):
@@ -256,10 +293,9 @@ class Object(Visited):
 def read_annotations(comment):
   annots = [['preamble', '', '']]
   for line in comment.splitlines():
-    line = line.strip()
     if len(line) == 0:
       continue
-    if line[0] == '@':
+    if re.compile('@').match(line, 1):
       rl = line.partition('@')[2].split(' ')
       if len(rl) < 2:
         rl.append('')
@@ -309,5 +345,5 @@ if __name__ == "__main__":
     for a in read_annotations(c):
       annotation_to_representation(a)
 
-  # Generate HTML on standard output.
-  print HTMLVisitor().visit(Everything())
+  # Generate HTML on standard output
+  output_html_targets()
