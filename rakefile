@@ -2,7 +2,7 @@
 #
 # Instructions:
 #
-#   (1) Install rake build utility.
+#   (1) Install rake and python for your system.
 #
 #   (2) Run 'rake' to generate the following files:
 #       ++ meta2d.js
@@ -11,11 +11,10 @@
 #
 #   (3) Run 'rake clean' to remove all generated files.
 
-directory "docs/api"
-
 # (load order matters)
 sourcefiles = [
   "signature.js",
+  "src/bind.js",
   "src/meta2d.js",
   "src/modify.js",
   "src/math/affine.js",
@@ -50,7 +49,7 @@ task :merge do
 end
 
 desc "Build the documentation."
-task :document => [:merge, 'docs/api'] do
+task :document => [:merge] do
   puts "Parsing comments to build HTML documentation..."
   sh "cat 'meta2d.js' | ./doc.py"
   puts "Done documenting."

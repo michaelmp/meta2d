@@ -62,7 +62,7 @@ DOC_HTML = {
 <div> %(contained) </div>
 """
   , 'object': '<article id="%(label)"> <h2 class="object"> %(label) %(inheritance) </h2> <p> %(description) </p> <p> %(contained) </p> </article>'
-  , 'inheritance': '<div class="inheritance"> &sup; %(label) </div>'
+  , 'inheritance': '<div class="inheritance"> inherits %(label) </div>'
   , 'constructor': '<section> <h3 class="method"> Constructor </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
   , 'method': '<section> <h3 class="method"> %(label) </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
   , 'param': '<div> <span> &larr; %(label) </span> <span> %(description) </span> </div>'
@@ -228,7 +228,8 @@ class Method(Visited):
     return output
 
   def getContained(self):
-    return self.params
+    return []
+    #return self.params
 
 class Constructor(Method):
   def getType(self):
@@ -261,9 +262,11 @@ class Object(Visited):
     if a[0] == 'class':
       self.label = a[1]
       self.description = a[2]
+      self.type = a[0]
     elif a[0] == 'mixin':
       self.label = a[1]
       self.description = a[2]
+      self.type = a[0]
     elif a[0] == 'method':
       m = Method()
       m.incorporate_annotation(a)

@@ -1,73 +1,60 @@
 Meta2D
 ======
 
-meta2d.js provides the MetaContext, an enhanced implementation of the
-CanvasRenderingContext2D API as drafted by the World Wide Web Consortium
-in HTML5.
+Meta2D is a new Javascript framework for writing real-time graphical web
+applications with the Canvas 2d Context.
 
-A MetaContext does everything that a native Context2D can do in the browser and
-much more:
--  Layers
--  Entities
--  Cacheing
--  Mouse Interaction
+The primary class is the MetaContext, which extends the CanvasRenderingContext2D
+API with utilities for layers, entities, events, and cacheing.
 
-This project is hosted at <https://gitorious.org/meta2d>. Check there for
-updates and other information not found in this readme file.
-
-Where to Start
---------------
-
-The demo files are a great place to start. You may want to read them in the
-following order:
-1  layer.html - How a MetaContext uses multiple canvases.
-2  entity.html - The scene model & tags.
-3  drawing.html - Introduction to Drawings and the double-buffer.
-4  cache1.html - Do not repeat yourself.
+A MetaContext does everything that Canvas 2d Context does and more.
 
 How to Build
 ------------
 
-Install the rake build program and run:
+Install python and the rake build utility and run:
 
     rake
 
-You should have a large Javascript source in the build/ directory, along with a
-minified version, and gzipped versions of both (you will need to install gzip).
+This will generate a single Javascript source:
 
-You can build HTML documentation files by running:
+    meta2d.js
+
+How to Use
+----------
+
+Copy meta2d.js to your web host and include it in your HTML page. You can find
+demonstration pages in the 'examples' directory.
+
+Documentation
+-------------
+
+You can build the documentation with:
 
     rake document
 
-This will output a single html file to the doc/ directory.
+This will generate some html files, most notably:
+
+    docs/api/index.html
 
 Development
 -----------
 
 ### Main Branch ###
 
-    git clone git://gitorious.org/meta2d/meta2d.git meta2d
+The freshest code is hosted on Gitorious:
+
+    git clone git://gitorious.org/meta2d/core.git meta2d
 
 ### Testing ###
 
-The test/ directory contains scripts you can run in your browser to perform
-a battery of unit tests.
+If you are running tests from your filesystem, you may have to disable
+same-origin restrictions in your browser:
 
-If you get a SECURITY_ERR exception loading images it probably means that
-you're serving the tests from a local origin and your browser doesn't allow you
-to read local files where the same-origin policy applies (here, getImageData).
+- In chromium, run with --allow-file-access-from-files.
 
-In chromium, run with --allow-file-access-from-files.
-
-In firefox, go to about:config and change security.fileuri.strict_origin_policy
-to false.
-
-### Contact ###
-
-Please share feedback, bugs, patches, feature requests, and success stories
-by contacting the project owner(s) on the gitorious project page.
-
-    https://gitorious.org/meta2d
+- In firefox, go to about:config and change security.fileuri.strict_origin_policy
+  to false.
 
 License
 -------
@@ -87,4 +74,4 @@ License
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-A copy of the GPLv3 can be found in the accompanying COPYING file.
+A copy of the GPLv3 can be found in the accompanying LICENSE file.

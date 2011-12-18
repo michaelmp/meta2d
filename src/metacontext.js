@@ -451,9 +451,9 @@
      *
      * @param y
      *
-     * @param sorted
+     * @param [<i>sorted</i>]
      *
-     * @param layered
+     * @param [<i>layered</i>]
      *
      * @return Array
      */
