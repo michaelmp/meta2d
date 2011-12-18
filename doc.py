@@ -61,7 +61,7 @@ DOC_HTML = {
     'everything': """
 <div> %(contained) </div>
 """
-  , 'object': '<article id="%(label)"> <h2 class="object"> %(label) %(inheritance) </h2> <p> %(description) </p> <p> %(contained) </p> </article>'
+  , 'object': '<article id="%(label)"> <h2 class="object"> %(label) <a class="link" href="#%(label)">#</a> %(inheritance) </h2> <p> %(description) </p> <p> %(contained) </p> </article>'
   , 'inheritance': '<div class="inheritance"> inherits %(label) </div>'
   , 'constructor': '<section> <h3 class="method"> Constructor </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
   , 'method': '<section> <h3 class="method"> %(label) </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'

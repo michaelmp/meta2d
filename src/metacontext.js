@@ -279,7 +279,7 @@
       w_ = w
       h_ = h
 
-      if (!parent_) parent_ = document.createElement('div')
+      if (!parent_) parent_ = document.createElement('ins')
 
       var style = canvas_ ?
         '' :

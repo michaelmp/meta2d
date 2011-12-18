@@ -33,11 +33,11 @@
    *  </p>
    *
    *  <p>
-   *  A forward projection applies the projection.
+   *  A forward operation applies the projection.
    *  </p>
    *
    *  <p>
-   *  A reverse projection undoes the projection.
+   *  A reverse operation undoes the projection.
    *  </p>
    *
    * @extends Modifiable<<ProjectionType>>

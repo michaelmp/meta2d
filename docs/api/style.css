@@ -55,3 +55,13 @@ a {
 a:visited {
   color: #cc33cc;
 }
+a.link {
+  float: right;
+  font-size: smaller;
+  text-decoration: none;
+  color: #ccc;
+}
+a.link:hover {
+  color: #f44;
+  text-decoration: underline;
+}
