@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded',
-(function() {
+document.addEventListener('DOMContentLoaded', (function() {
   this.printheader('meta2d::segment');
 
   // constructor
@@ -64,4 +63,4 @@ document.addEventListener('DOMContentLoaded',
 
   summarize();
 
-}).bind(this));
+}).bind(this), false);

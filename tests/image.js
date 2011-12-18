@@ -53,4 +53,4 @@ document.addEventListener('DOMContentLoaded',
   image1 = new meta2d.Image('RGBAcolors.png', false, f2, loadfail);
 
 
-}).bind(this));
+}).bind(this), false);

@@ -94,4 +94,4 @@ document.addEventListener('DOMContentLoaded',
 
   image = new meta2d.Image('html5.png', false, f.bind(this), loadfail.bind(this));
 
-}).bind(this));
+}).bind(this), false);

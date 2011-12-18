@@ -91,4 +91,4 @@ document.addEventListener('DOMContentLoaded',
 
   summarize();
 
-}).bind(this));
+}).bind(this), false);

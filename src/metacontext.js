@@ -665,21 +665,22 @@
 
     // Listen to DOM mouse events.
 
-    parent_.addEventListener('click', handle_click.bind(this))
-    parent_.addEventListener('mousedown', handle_mousedown.bind(this))
-    parent_.addEventListener('mouseup', handle_mouseup.bind(this))
-    parent_.addEventListener('mousemove', handle_mousemove.bind(this))
-    parent_.addEventListener('mouseout', handle_mouseout.bind(this))
-    parent_.addEventListener('dblclick', handle_dblclick.bind(this))
+    parent_.addEventListener('click', handle_click.bind(this), false)
+    parent_.addEventListener('mousedown', handle_mousedown.bind(this), false)
+    parent_.addEventListener('mouseup', handle_mouseup.bind(this), false)
+    parent_.addEventListener('mousemove', handle_mousemove.bind(this), false)
+    parent_.addEventListener('mouseout', handle_mouseout.bind(this), false)
+    parent_.addEventListener('dblclick', handle_dblclick.bind(this), false)
 
     // Listen to DOM textInput event via hidden input.
 
     textinput_ = document.createElement('input')
     textinput_.style.position = 'fixed'
     textinput_.style.left = '-31337px'
-    textinput_.addEventListener('textInput', handle_textinput.bind(this))
-    textinput_.addEventListener('blur', handle_textinput_blur.bind(this))
-    textinput_.addEventListener('focus', handle_textinput_focus.bind(this))
+    textinput_.addEventListener('textInput', handle_textinput.bind(this), false)
+    textinput_.addEventListener('blur', handle_textinput_blur.bind(this), false)
+    textinput_.addEventListener('focus',
+        handle_textinput_focus.bind(this), false)
     parent_.appendChild(textinput_)
   }
 
