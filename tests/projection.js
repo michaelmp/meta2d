@@ -91,9 +91,6 @@ document.addEventListener('DOMContentLoaded',
   assert('zero scale is inf on reversal',
       proj1.reverse([1, 2])[0] === Infinity);
 
-  printsection('modified transformation matrix');
-  assert('');
-
   summarize();
 
 }).bind(this));

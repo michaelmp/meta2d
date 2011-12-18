@@ -89,21 +89,6 @@ document.addEventListener('DOMContentLoaded',
       twn5.fix(seg2)(-0.99999999).a === 0.2 &&
       twn5.fix(seg2)(-1.00000001).a === -0.2);
 
-  printsection('modified quantization');
-  assert('');
-
-  printsection('modified envelope');
-  assert('');
-
-  printsection('modified extrapolation');
-  assert('');
-
-  printsection('modified s-curve');
-  assert('');
-
-  printsection('modified noise');
-  assert('');
-
   summarize();
 
 }).bind(this));

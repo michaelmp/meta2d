@@ -44,10 +44,6 @@ document.addEventListener('DOMContentLoaded',
   assert('infinite not included within infinite bounds',
       !seg.includes(s1, Number.POSITIVE_INFINITY , Number.NEGATIVE_INFINITY));
 
-  // excludes
-  printsection('excludes');
-  assert('');
-
   // forward
   printsection('isForward');
   assert('isForward',
