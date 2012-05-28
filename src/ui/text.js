@@ -187,6 +187,16 @@
     this.cursor = this.lines[this.line].length
   }
 
+  TextArea.prototype.reset = function() {
+    this.cursor = 0
+    this.line = 0
+  }
+
+  TextArea.prototype.erase = function() {
+    this.lines = ['']
+    this.reset()
+  }
+
   TextArea.prototype.upline = function() {
     if (!this.line) return false
     this.line -= 1
