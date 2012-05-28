@@ -279,7 +279,7 @@
       w_ = w
       h_ = h
 
-      if (!parent_) parent_ = document.createElement('ins')
+      if (!parent_) parent_ = document.createElement('div')
 
       var style = canvas_ ?
         '' :
@@ -504,6 +504,8 @@
     }
 
     var handle_click = function(event) {
+      event.stopPropagation()
+
       var mouse = mouse_pos(event),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true)
 
@@ -513,9 +515,12 @@
       if (!top.onclick) return
 
       top.onclick.apply(top, mouse)
+
     }
 
     var handle_dblclick = function(event) {
+      event.stopPropagation()
+
       var mouse = mouse_pos(event),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true)
 
@@ -589,11 +594,13 @@
       if (focus_ && focus_.onfocus) {
         handle_textinput_focus()
       }
-      
+
       event.preventDefault()
     }
 
     var handle_mouseup = function(event) {
+      event.stopPropagation()
+
       var mouse = mouse_pos(event),
           hits = this.pick.call(this, mouse[0], mouse[1], true, true),
           top

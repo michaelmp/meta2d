@@ -57,11 +57,10 @@ a:visited {
 }
 a.link {
   float: right;
-  font-size: smaller;
   text-decoration: none;
-  color: #ccc;
+  color: #888;
 }
 a.link:hover {
-  color: #f44;
+  color: #c22;
   text-decoration: underline;
 }

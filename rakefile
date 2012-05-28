@@ -60,7 +60,7 @@ desc "Remove all generated files."
 task :clean do
   sh """
     rm meta2d.js ;
-    rm docs/api/index.html ;
+    rm docs/*.html ;
     """
 end
 

@@ -2,21 +2,8 @@
 
 # Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
 #
-# A quick & dirty script for parsing annotated Javascript comments and building
-# a representation of Objects and Mixins for output as documentation in any
-# target format.
-#
-# How to use this script:
-#
-# (1) Install the python interpreter for your system.
-# (2) Write a visitor (see HTMLVisitor below) for your output format.
-#     The script comes with an HTML generator. Change __main__ to output your
-#     new visitor's output instead of HTML.
-# (3) Input your source through standard input.
-# (4) Redirect standard output to a file.
-#
-# Example (UNIXish systems):
-#  cat source.js | ./doc.py > doc.html
+# A quick & dirty script for parsing annotated Javascript comments on stdin and
+# generating HTML documentation.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,15 +24,21 @@ import re
 ############ Begin HTML generator ############
 
 DOC_HTML_TARGETS = {
-    'docs/api/index.html': """
+    'docs/index.html': """
 %(header)
 %(index)
 %(footer)
 """
-  , 'docs/api/all.html': """
+  , 'docs/all.html': """
 %(header)
 %(index-all)
+%(overview)
 %(everything)
+%(footer)
+"""
+  , 'docs/Overview.html': """
+%(header)
+%(overview)
 %(footer)
 """
 }
@@ -54,7 +47,7 @@ DOC_HTML_FRAGMENT = {
     'header': open('docs/template/header.html', 'r').read()
   , 'footer': open('docs/template/footer.html', 'r').read()
   , 'index' : open('docs/template/index.html', 'r').read()
-  , 'index-all': open('docs/template/index-all.html', 'r').read()
+  , 'index-all': open('docs/template/index-all.html', 'r').read(), 'overview' : open('docs/template/overview.html', 'r').read()
 }
 
 DOC_HTML = {
@@ -63,8 +56,8 @@ DOC_HTML = {
 """
   , 'object': '<article id="%(label)"> <h2 class="object"> %(label) <a class="link" href="#%(label)">#</a> %(inheritance) </h2> <p> %(description) </p> <p> %(contained) </p> </article>'
   , 'inheritance': '<div class="inheritance"> inherits %(label) </div>'
-  , 'constructor': '<section> <h3 class="method"> Constructor </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
-  , 'method': '<section> <h3 class="method"> %(label) </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
+  , 'constructor': '<section id="%(constructor-link)"> <h3 class="method"> Constructor <a class="link" href="#%(constructor-link)">#</a> </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
+  , 'method': '<section id="%(method-link)"> <h3 class="method"> %(label) <a class="link" href="#%(method-link)">#</a> </h3> %(contained) <div class="method_desc"> %(description) </div> </section>'
   , 'param': '<div> <span> &larr; %(label) </span> <span> %(description) </span> </div>'
   , 'return': '<div class="return"> div class="return_type"> &rarr; %(label) </div> <div class="return_desc"> %(description) </div> </div>'
 }
@@ -85,7 +78,9 @@ class HTMLVisitor:
 
     # Parse special items
     s = s.replace('%(classes)', build_html_classes())
+    s = s.replace('%(classes-detailed)', build_html_classes(True))
     s = s.replace('%(mixins)', build_html_mixins())
+    s = s.replace('%(mixins-detailed)', build_html_mixins(True))
     s = s.replace('%(everything)', self.o_visit(Everything()))
 
     # Finally, filter/sanitize
@@ -110,8 +105,20 @@ class HTMLVisitor:
     s = s.replace('%(description)', d)
     s = s.replace('%(contained)', c)
     s = s.replace('%(inheritance)', i)
-        
+    if o.getType() == 'method':
+      s = s.replace('%(method-link)', o.parent.getLabel() + '-' + o.getName())
+    if o.getType() == 'constructor':
+      s = s.replace('%(constructor-link)', o.parent.getLabel() + '-Constructor')
+    
     return s
+
+def build_html_targets():
+  template = open('docs/template/article.html', 'r').read()
+  for c in namespace['class'].values() + namespace['mixin'].values():
+    article = HTMLVisitor().o_visit(c)
+    target = 'docs/' + c.getLabel().split(':')[0] + '.html'
+    html = template.replace('%(article)', article)
+    DOC_HTML_TARGETS[target] = html
 
 def output_html_targets():
   for target in DOC_HTML_TARGETS.keys():
@@ -120,20 +127,38 @@ def output_html_targets():
     f.write(HTMLVisitor().s_visit(template))
     f.close()
 
-def build_html_classes():
+def build_html_classes(detailed = False):
   html = ''
   for c in sorted(namespace['class'].values(),
         lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
     l = c.getLabel().split(':')[0]
-    html += '<li><a href="#' + l + '">' + l + '</a></li>'
+    link = '#' + l if detailed else l + '.html'
+    html += '<li><a href="' + link + '">' + l + '</a>'
+    if detailed:
+      html += '<ul>'
+      for method in c.getMethods():
+        name = method.getName()
+        html += '<li><a href="#' + l + '-' + name + '" class="">' + name + '</a></li>'
+      html += '</ul>'
+
+    html += '</li>'
+  
   return html
 
-def build_html_mixins():
+def build_html_mixins(detailed = False):
   html = ''
   for m in sorted(namespace['mixin'].values(),
         lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower())):
     l = m.getLabel().split(':')[0]
-    html += '<li><a href="#' + l + '" class="content">' + l + '</a></li>'
+    link = '#' + l if detailed else l + '.html'
+    html += '<li><a href="' + link + '" class="content">' + l + '</a>'
+    if detailed:
+      html += '<ul>'
+      for method in m.getMethods():
+        name = method.getName()
+        html += '<li><a href="#' + l + '-' + name + '" class="">' + name + '</a></li>'
+      html += '</ul>'
+    html += '</li>'
   return html
 
 ############ End HTML generator ############
@@ -222,14 +247,13 @@ class Method(Visited):
   def getLabel(self):
     output = self.label + '(' + ', '.join( \
         [p.getLabel() for p in self.params]) + ')'
-    #if self.ret:
-    #  output += ' --> ' + \
-    #      self.ret.getLabel() if self.ret.getLabel() else 'void'
     return output
 
   def getContained(self):
     return []
-    #return self.params
+
+  def getName(self):
+    return self.label
 
 class Constructor(Method):
   def getType(self):
@@ -240,6 +264,7 @@ class Constructor(Method):
       self.description = a[1] + a[2]
     elif a[0] == 'param':
       p = Param()
+      p.parent = self
       p.incorporate_annotation(a)
       self.params.append(p)
 
@@ -256,6 +281,7 @@ class Object(Visited):
     Visited.__init__(self)
     self.constructor = None
     self.inheritance = []
+    self.methods = {}
 
   def incorporate_annotation(self, a):
     global method_focus
@@ -270,16 +296,19 @@ class Object(Visited):
     elif a[0] == 'method':
       m = Method()
       m.incorporate_annotation(a)
-      self.contained[a[1]] = m
+      m.parent = self
+      self.methods[a[1]] = m
       method_focus = m
     elif a[0] == 'constructor':
       c = Constructor()
       c.incorporate_annotation(a)
+      c.parent = self
       self.constructor = c
       method_focus = c
     elif a[0] == 'extends':
       i = Implements()
       i.incorporate_annotation(a)
+      i.parent = self
       self.inheritance.append(i)
 
   def getInheritance(self):
@@ -289,9 +318,12 @@ class Object(Visited):
     return 'object'
 
   def getContained(self):
-    methods = sorted(self.contained.values(), \
-        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
+    methods = self.getMethods()
     return [self.constructor] + methods if self.constructor else methods
+
+  def getMethods(self):
+    return sorted(self.methods.values(), \
+        lambda a,b: cmp(a.getLabel().lower(), b.getLabel().lower()))
 
 def read_annotations(comment):
   annots = [['preamble', '', '']]
@@ -349,4 +381,5 @@ if __name__ == "__main__":
       annotation_to_representation(a)
 
   # Generate HTML on standard output
+  build_html_targets()
   output_html_targets()
