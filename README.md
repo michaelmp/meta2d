@@ -20,12 +20,6 @@ This will generate a single Javascript source:
 
     meta2d.js
 
-How to Use
-----------
-
-Copy meta2d.js to your web host and include it in your HTML page. You can find
-example code in the 'examples' directory.
-
 Documentation
 -------------
 
