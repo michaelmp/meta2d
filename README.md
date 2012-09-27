@@ -1,7 +1,7 @@
 Meta2D
 ======
 
-Meta2D is a new Javascript framework for writing real-time graphical web
+Meta2D is a Javascript framework for writing real-time graphical web
 applications with the Canvas 2d Context.
 
 The primary class is the MetaContext, which extends the CanvasRenderingContext2D
@@ -24,7 +24,7 @@ How to Use
 ----------
 
 Copy meta2d.js to your web host and include it in your HTML page. You can find
-demonstration pages in the 'examples' directory.
+example code in the 'examples' directory.
 
 Documentation
 -------------
@@ -37,29 +37,10 @@ This will generate some html files, most notably:
 
     docs/api/index.html
 
-Development
------------
-
-### Main Branch ###
-
-The freshest code is hosted on Gitorious:
-
-    git clone git://gitorious.org/meta2d/core.git meta2d
-
-### Testing ###
-
-If you are running tests from your filesystem, you may have to disable
-same-origin restrictions in your browser:
-
-- In chromium, run with --allow-file-access-from-files.
-
-- In firefox, go to about:config and change security.fileuri.strict_origin_policy
-  to false.
-
 License
 -------
 
-    Copyright (c) 2011 Michael Morris-Pearce <mikemp@mit.edu>
+    Copyright (c) 2011-2012 Michael Morris-Pearce <mikemp@mit.edu>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
